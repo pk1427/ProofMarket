@@ -1,0 +1,22 @@
+[
+  {
+    "name": "customer-model-v3.txt",
+    "declaredValue": 9,
+    "sizeBytes": 127,
+    "costPerEpoch": "12700000000000000",
+    "datasetId": "31816",
+    "pieceCid": "bafkzcibcaabksivmka62dqik6ts74ncdgxdqzpuzq7ay3rb4j42bvwbkhnuekmq",
+    "provider": "https://calib2.ezpdpz.net",
+    "status": "active"
+  },
+  {
+    "name": "raw-sensor-archive.txt",
+    "declaredValue": 3,
+    "sizeBytes": 127,
+    "costPerEpoch": "12700000000000000",
+    "datasetId": "31817",
+    "pieceCid": "bafkzcibcaabb5d7vd5ewxmqin6p5q6rvgzzip535ptiys65ptcqsuzazmebvygq",
+    "provider": "https://calib2.ezpdpz.net",
+    "status": "active"
+  }
+]
