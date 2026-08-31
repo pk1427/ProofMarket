@@ -55,17 +55,18 @@ export async function runDecisionLoop(): Promise<DecisionResult> {
   const state = await getAccountState()
   const datasets = loadDatasets()
 
-  const totalCostPerEpoch = datasets.reduce((sum, d) => sum + BigInt(d.costPerEpoch), 0n)
-  const remainingEpochs = totalCostPerEpoch > 0n ? state.balance / totalCostPerEpoch : state.runway
+  const activeDatasets = datasets.filter((d) => d.status === 'active')
+  const totalCostPerEpoch = activeDatasets.reduce((sum, d) => sum + BigInt(d.costPerEpoch), 0n)
+  const remainingEpochs = state.runway
 
-  const isCritical = remainingEpochs < BigInt(TRIAGE_THRESHOLD_EPOCHS)
+  const isCritical = remainingEpochs < BigInt(TRIAGE_THRESHOLD_EPOCHS) && activeDatasets.length > 1
 
   let protectedDataset: string | null = null
   let pausedDataset: string | null = null
   let reason = ''
 
   if (isCritical) {
-    const sorted = [...datasets].sort((a, b) => b.declaredValue - a.declaredValue)
+    const sorted = [...activeDatasets].sort((a, b) => b.declaredValue - a.declaredValue)
     const [higher, lower] = sorted
 
     protectedDataset = higher.name
@@ -73,6 +74,8 @@ export async function runDecisionLoop(): Promise<DecisionResult> {
 
     reason = `Runway ${remainingEpochs.toString()} epochs is below threshold ${TRIAGE_THRESHOLD_EPOCHS}. ` +
       `Protected ${higher.name} (declared_value=${higher.declaredValue}) over ${lower.name} (declared_value=${lower.declaredValue}) by priority.`
+  } else if (activeDatasets.length <= 1) {
+    reason = `Only ${activeDatasets.length} active dataset(s). No triage needed.`
   } else {
     reason = `Runway ${remainingEpochs.toString()} epochs is above threshold ${TRIAGE_THRESHOLD_EPOCHS}. No action needed.`
   }

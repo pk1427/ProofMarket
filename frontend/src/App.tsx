@@ -106,9 +106,13 @@ function App() {
   }, [refreshAll])
 
   const totalCostPerEpoch = Number(account?.lockupRate ?? 0)
-  const remainingEpochs = account ? Number(account.runway) : null
+  const remainingEpochs = account
+    ? totalCostPerEpoch > 0
+      ? Math.floor(Number(account.balance) / totalCostPerEpoch)
+      : Number(account.runway)
+    : null
   const threshold = 10000
-  const isHealthy = remainingEpochs !== null && remainingEpochs >= threshold
+  const isHealthy = latestDecision ? latestDecision.outcome === 'healthy' : remainingEpochs !== null && remainingEpochs >= threshold
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
