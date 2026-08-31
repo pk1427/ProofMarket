@@ -27,6 +27,22 @@ function RealBadge() {
   )
 }
 
+function ExplorerLink({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 transition ${className || ''}`}
+    >
+      {children}
+      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+      </svg>
+    </a>
+  )
+}
+
 export default function Demo() {
   const [account, setAccount] = useState<AccountState | null>(null)
   const [datasets, setDatasets] = useState<Dataset[]>([])
@@ -417,16 +433,22 @@ export default function Demo() {
                     <span className="text-lg font-mono text-white">{formatWei(ds.costPerEpoch)} USDFC</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Dataset ID</span>
-                    <span className="text-lg font-mono text-white">#{ds.datasetId}</span>
+                    <span className="text-gray-400">Dataset ID <RealBadge /></span>
+                    <ExplorerLink href={`https://calibration.filfox.info/en/address/${account ? '0x6c79C23ef70df857a0544111a29A21b655709090' : ''}`} className="text-lg font-mono">
+                      #{ds.datasetId}
+                    </ExplorerLink>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">PieceCID</span>
-                    <span className="text-sm font-mono text-gray-300 truncate max-w-[200px]">{ds.pieceCid}</span>
+                    <ExplorerLink href={`https://cid.ipfs.io/#${ds.pieceCid}`} className="text-sm font-mono text-gray-300 truncate max-w-[200px]">
+                      {ds.pieceCid.slice(0, 20)}...
+                    </ExplorerLink>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">Provider</span>
-                    <span className="text-sm font-mono text-gray-300 truncate max-w-[200px]">{ds.provider}</span>
+                    <a href={ds.provider} target="_blank" rel="noopener noreferrer" className="text-sm font-mono text-gray-300 truncate max-w-[200px] hover:text-white transition">
+                      {ds.provider.replace('https://', '')}
+                    </a>
                   </div>
 
                   {ds.status === 'paused' && (
@@ -516,7 +538,11 @@ export default function Demo() {
                       Paused <span className="text-red-300 font-medium">{item.datasetName}</span> #{item.datasetId}
                     </div>
                     {item.txHash && (
-                      <div className="text-xs text-gray-500 font-mono mt-1 truncate">tx: {item.txHash}</div>
+                      <div className="text-xs text-gray-500 font-mono mt-1">
+                        <ExplorerLink href={`https://calibration.filfox.info/en/tx/${item.txHash}`} className="font-mono">
+                          tx: {item.txHash.slice(0, 10)}...{item.txHash.slice(-8)}
+                        </ExplorerLink>
+                      </div>
                     )}
                     {item.endEpoch && (
                       <div className="text-xs text-gray-500">endEpoch: {item.endEpoch}</div>

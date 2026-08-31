@@ -12,8 +12,28 @@ import { join, dirname } from 'node:path'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const app = express()
-app.use(cors())
-app.use(express.json())
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
+  'http://127.0.0.1:5175',
+]
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Origin not allowed'))
+    }
+  },
+  credentials: true,
+}))
+
+app.use(express.json({ limit: '1mb' }))
 
 const DATA_DIR = join(__dirname, '..', 'data')
 const DATASETS_FILE = join(DATA_DIR, 'datasets.json')
@@ -114,6 +134,11 @@ app.post('/api/act', async (req, res) => {
       return res.status(400).json({ error: 'datasetId and datasetName are required' })
     }
 
+    const numericId = BigInt(datasetId)
+    if (numericId <= 0n) {
+      return res.status(400).json({ error: 'Invalid datasetId' })
+    }
+
     const result = await pauseDataset(datasetId, datasetName)
     res.json(result)
   } catch (err) {
@@ -208,6 +233,11 @@ app.get('/api/check', async (_req, res) => {
     console.error('GET /api/check error:', err)
     res.status(500).json({ error: 'Decision check failed' })
   }
+})
+
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('Unhandled error:', err)
+  res.status(500).json({ error: 'Internal server error' })
 })
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3001

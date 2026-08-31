@@ -217,5 +217,34 @@
     "pausedDataset": null,
     "reason": "Only 1 active dataset(s). No triage needed.",
     "explanation": "With a runway of 9,960 epochs sitting just 40 epochs below the 10,000-epoch threshold, this portfolio is extremely close to triggering triage — but since only one dataset is currently active, no action is required. Had both **customer-model-v3.txt** (declared value: 9) and **raw-sensor-archive.txt** (declared value: 3) been active simultaneously, the higher-priority **customer-model-v3.txt** would have been retained over **raw-sensor-archive.txt**, whose lower declared value of 3 signals it is more expendable archival data compared to the actively used customer model. For now, the single active dataset remains funded, but the margin is razor-thin and warrants close monitoring."
+  },
+  {
+    "timestamp": "2026-08-31T19:25:43.941Z",
+    "outcome": "healthy",
+    "balance": "8115000097610466",
+    "runway": "9738",
+    "lockupRate": "833333343357",
+    "currentEpoch": "4029264",
+    "totalCostPerEpoch": "12700000000000000",
+    "remainingEpochs": "9738",
+    "threshold": "10000",
+    "protectedDataset": null,
+    "pausedDataset": null,
+    "reason": "Only 1 active dataset(s). No triage needed."
+  },
+  {
+    "timestamp": "2026-08-31T19:25:43.941Z",
+    "outcome": "healthy",
+    "balance": "8115000097610466",
+    "runway": "9738",
+    "lockupRate": "833333343357",
+    "currentEpoch": "4029264",
+    "totalCostPerEpoch": "12700000000000000",
+    "remainingEpochs": "9738",
+    "threshold": "10000",
+    "protectedDataset": null,
+    "pausedDataset": null,
+    "reason": "Only 1 active dataset(s). No triage needed.",
+    "explanation": "With a runway of 9,738 epochs against a threshold of 10,000 epochs, this portfolio is only modestly below the safety threshold, and critically, only **customer-model-v3.txt** is active — **raw-sensor-archive.txt** has already been removed from consideration. Since no triage action is required with a single active dataset, the trade-off is straightforward: **customer-model-v3.txt** (declared value 9) would be prioritized over **raw-sensor-archive.txt** (declared value 3) if a choice were ever needed, as its higher user-assigned priority signals greater operational importance. The lower-value sensor archive would be the first candidate for removal should the runway deteriorate further toward or below the 10,000-epoch threshold."
   }
 ]

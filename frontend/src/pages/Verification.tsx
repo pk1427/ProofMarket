@@ -4,6 +4,30 @@ import type { Dataset, InterventionResult } from '../types'
 
 const API_BASE = 'http://localhost:3001'
 
+function ExplorerLink({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 transition ${className || ''}`}
+    >
+      {children}
+      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+      </svg>
+    </a>
+  )
+}
+
+function RealBadge() {
+  return (
+    <span className="ml-2 px-1.5 py-0.5 bg-emerald-900/60 text-emerald-300 text-[10px] font-semibold rounded border border-emerald-700/60 uppercase tracking-wider">
+      Onchain
+    </span>
+  )
+}
+
 export default function Verification() {
   const [datasets, setDatasets] = useState<Dataset[]>([])
   const [interventions, setInterventions] = useState<InterventionResult[]>([])
@@ -118,13 +142,15 @@ export default function Verification() {
                       </span>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      {item.txHash && (
-                        <div>
-                          <div className="text-xs text-gray-500 mb-1">Transaction Hash</div>
-                          <div className="font-mono text-gray-300 break-all">{item.txHash}</div>
-                        </div>
-                      )}
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                       {item.txHash && (
+                         <div>
+                           <div className="text-xs text-gray-500 mb-1">Transaction Hash</div>
+                           <ExplorerLink href={`https://calibration.filfox.info/en/tx/${item.txHash}`} className="font-mono break-all">
+                             {item.txHash}
+                           </ExplorerLink>
+                         </div>
+                       )}
                       {item.endEpoch && (
                         <div>
                           <div className="text-xs text-gray-500 mb-1">End Epoch</div>
@@ -161,16 +187,22 @@ export default function Verification() {
 
                   <div className="space-y-2 text-sm mb-4">
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Dataset ID</span>
-                      <span className="text-gray-200 font-mono">#{ds.datasetId}</span>
+                      <span className="text-gray-500">Dataset ID <RealBadge /></span>
+                    <ExplorerLink href="https://calibration.filfox.info/en/address/0x6c79C23ef70df857a0544111a29A21b655709090" className="text-gray-200 font-mono">
+                      #{ds.datasetId}
+                    </ExplorerLink>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">PieceCID</span>
-                      <span className="text-gray-200 font-mono text-xs truncate max-w-[200px]">{ds.pieceCid}</span>
+                      <ExplorerLink href={`https://cid.ipfs.io/#${ds.pieceCid}`} className="text-gray-200 font-mono text-xs truncate max-w-[200px]">
+                        {ds.pieceCid.slice(0, 20)}...
+                      </ExplorerLink>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Provider</span>
-                      <span className="text-gray-200 font-mono text-xs truncate max-w-[200px]">{ds.provider}</span>
+                      <a href={ds.provider} target="_blank" rel="noopener noreferrer" className="text-gray-200 font-mono text-xs truncate max-w-[200px] hover:text-white transition">
+                        {ds.provider.replace('https://', '')}
+                      </a>
                     </div>
                   </div>
 
