@@ -4,6 +4,7 @@ import cors from 'cors'
 import { getAccountState, getBalance, getRunway } from './paymentsClient.ts'
 import { runDecisionLoop, type Dataset, type DecisionResult } from './decisionLoop.ts'
 import { generateExplanation, generateFallbackExplanation, type ExplanationInput } from './explain.ts'
+import { pauseDataset, type InterventionResult } from './intervention.ts'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 
@@ -16,6 +17,7 @@ app.use(express.json())
 const DATA_DIR = join(__dirname, '..', 'data')
 const DATASETS_FILE = join(DATA_DIR, 'datasets.json')
 const DECISIONS_FILE = join(DATA_DIR, 'decisions.json')
+const INTERVENTIONS_FILE = join(DATA_DIR, 'interventions.json')
 
 function ensureDataDir() {
   if (!existsSync(DATA_DIR)) {
@@ -90,6 +92,35 @@ app.get('/api/decisions', (_req, res) => {
   }
 })
 
+app.get('/api/interventions', (_req, res) => {
+  try {
+    ensureDataDir()
+    if (!existsSync(INTERVENTIONS_FILE)) {
+      return res.json([])
+    }
+    const raw = readFileSync(INTERVENTIONS_FILE, 'utf-8')
+    res.json(JSON.parse(raw))
+  } catch (err) {
+    console.error('GET /api/interventions error:', err)
+    res.status(500).json({ error: 'Failed to read interventions' })
+  }
+})
+
+app.post('/api/act', async (req, res) => {
+  try {
+    const { datasetId, datasetName } = req.body ?? {}
+    if (!datasetId || !datasetName) {
+      return res.status(400).json({ error: 'datasetId and datasetName are required' })
+    }
+
+    const result = await pauseDataset(datasetId, datasetName)
+    res.json(result)
+  } catch (err) {
+    console.error('POST /api/act error:', err)
+    res.status(500).json({ error: 'Intervention failed' })
+  }
+})
+
 app.get('/api/check', async (_req, res) => {
   try {
     const decision = await runDecisionLoop()
@@ -157,4 +188,7 @@ app.listen(PORT, () => {
   console.log(`  GET  /api/datasets`)
   console.log(`  POST /api/datasets`)
   console.log(`  GET  /api/check`)
+  console.log(`  GET  /api/decisions`)
+  console.log(`  GET  /api/interventions`)
+  console.log(`  POST /api/act`)
 })

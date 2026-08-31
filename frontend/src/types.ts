@@ -31,3 +31,14 @@ export type DecisionResult = {
   reason: string
   explanation?: string
 }
+
+export type InterventionResult = {
+  timestamp: string
+  action: 'pause'
+  datasetName: string
+  datasetId: string
+  txHash?: string
+  endEpoch?: string
+  status: 'pending' | 'completed' | 'failed'
+  error?: string
+}

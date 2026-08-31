@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { AccountState, Dataset, DecisionResult } from './types'
+import type { AccountState, Dataset, DecisionResult, InterventionResult } from './types'
 
 const API_BASE = 'http://localhost:3001'
 
@@ -15,6 +15,7 @@ function App() {
   const [datasets, setDatasets] = useState<Dataset[]>([])
   const [latestDecision, setLatestDecision] = useState<DecisionResult | null>(null)
   const [decisions, setDecisions] = useState<DecisionResult[]>([])
+  const [interventions, setInterventions] = useState<InterventionResult[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -40,14 +41,21 @@ function App() {
     setLatestDecision(data[data.length - 1] ?? null)
   }, [])
 
+  const fetchInterventions = useCallback(async () => {
+    const res = await fetch(`${API_BASE}/api/interventions`)
+    if (!res.ok) throw new Error('Failed to fetch interventions')
+    const data = await res.json()
+    setInterventions(data)
+  }, [])
+
   const refreshAll = useCallback(async () => {
     setError(null)
     try {
-      await Promise.all([fetchAccount(), fetchDatasets(), fetchDecisions()])
+      await Promise.all([fetchAccount(), fetchDatasets(), fetchDecisions(), fetchInterventions()])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     }
-  }, [fetchAccount, fetchDatasets, fetchDecisions])
+  }, [fetchAccount, fetchDatasets, fetchDecisions, fetchInterventions])
 
   const runCheck = async () => {
     setLoading(true)
@@ -66,17 +74,41 @@ function App() {
     }
   }
 
+  const executeIntervention = async () => {
+    if (!latestDecision?.pausedDataset) return
+    setLoading(true)
+    setError(null)
+    try {
+      const dataset = datasets.find((d) => d.name === latestDecision.pausedDataset)
+      if (!dataset) throw new Error('Paused dataset not found')
+
+      const res = await fetch(`${API_BASE}/api/act`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ datasetId: dataset.datasetId, datasetName: dataset.name }),
+      })
+      if (!res.ok) throw new Error('Intervention failed')
+      const result = await res.json()
+      setInterventions((prev) => [...prev, result])
+      setLatestDecision(null)
+      await Promise.all([fetchDatasets(), fetchAccount(), fetchDecisions()])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Intervention failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     refreshAll()
     const interval = setInterval(refreshAll, 30000)
     return () => clearInterval(interval)
   }, [refreshAll])
 
-  const totalCostPerEpoch = datasets.reduce((sum, d) => sum + Number(d.costPerEpoch), 0)
-  const remainingEpochs =
-    account && totalCostPerEpoch > 0
-      ? Math.floor(Number(account.runway) / totalCostPerEpoch)
-      : null
+  const totalCostPerEpoch = Number(account?.lockupRate ?? 0)
+  const remainingEpochs = account ? Number(account.runway) : null
+  const threshold = 10000
+  const isHealthy = remainingEpochs !== null && remainingEpochs >= threshold
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
@@ -144,7 +176,7 @@ function App() {
               <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
                 Portfolio Summary
               </h2>
-              {account && datasets.length > 0 ? (
+              {account ? (
                 <div className="space-y-3">
                   <div>
                     <div className="text-xs text-gray-500">Total Cost / Epoch</div>
@@ -164,10 +196,10 @@ function App() {
                     <div className="text-xs text-gray-500">Status</div>
                     <div
                       className={`text-sm font-medium mt-1 ${
-                        latestDecision?.outcome === 'critical' ? 'text-red-400' : 'text-green-400'
+                        isHealthy ? 'text-green-400' : 'text-red-400'
                       }`}
                     >
-                      {latestDecision ? latestDecision.outcome.toUpperCase() : 'PENDING CHECK'}
+                      {account ? (isHealthy ? 'HEALTHY' : 'CRITICAL') : 'PENDING CHECK'}
                     </div>
                   </div>
                 </div>
@@ -205,6 +237,35 @@ function App() {
                     <div className="text-sm font-medium text-red-300">{latestDecision.pausedDataset}</div>
                   </div>
                 )}
+                {latestDecision.outcome === 'critical' && latestDecision.pausedDataset && (() => {
+                  const alreadyPaused = datasets.some(
+                    (d) => d.name === latestDecision.pausedDataset && d.status === 'paused'
+                  )
+                  if (alreadyPaused) {
+                    return (
+                      <div className="pt-3 border-t border-gray-700">
+                        <div className="text-xs text-yellow-400 font-medium">Intervention already executed</div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {latestDecision.pausedDataset} has been paused on-chain.
+                        </p>
+                      </div>
+                    )
+                  }
+                  return (
+                    <div className="pt-3 border-t border-gray-700">
+                      <button
+                        onClick={executeIntervention}
+                        disabled={loading}
+                        className="w-full px-3 py-2 bg-red-700 hover:bg-red-600 disabled:bg-gray-600 rounded-lg text-sm font-medium transition"
+                      >
+                        {loading ? 'Pausing...' : `Pause ${latestDecision.pausedDataset}`}
+                      </button>
+                      <p className="text-xs text-gray-500 mt-2">
+                        This will terminate the dataset on-chain via Synapse.
+                      </p>
+                    </div>
+                  )
+                })()}
                 <div>
                   <div className="text-xs text-gray-500">Reason</div>
                   <div className="text-sm text-gray-300">{latestDecision.reason}</div>
@@ -300,6 +361,45 @@ function App() {
                     </span>
                   </div>
                   <div className="text-xs text-gray-400 line-clamp-2">{d.reason}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
+            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
+              Intervention Log
+            </h2>
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {interventions.length === 0 && (
+                <p className="text-gray-500 text-sm">No interventions executed yet.</p>
+              )}
+              {[...interventions].reverse().map((item, idx) => (
+                <div key={item.timestamp + idx} className="border-b border-gray-700 pb-3 last:border-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span
+                      className={`text-xs font-semibold ${
+                        item.status === 'completed' ? 'text-green-400' : item.status === 'failed' ? 'text-red-400' : 'text-yellow-400'
+                      }`}
+                    >
+                      {item.status.toUpperCase()}
+                    </span>
+                    <span className="text-xs text-gray-500 font-mono">
+                      {new Date(item.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    Paused <span className="text-red-300 font-medium">{item.datasetName}</span> #{item.datasetId}
+                  </div>
+                  {item.txHash && (
+                    <div className="text-xs text-gray-500 font-mono mt-1 truncate">tx: {item.txHash}</div>
+                  )}
+                  {item.endEpoch && (
+                    <div className="text-xs text-gray-500">endEpoch: {item.endEpoch}</div>
+                  )}
+                  {item.error && (
+                    <div className="text-xs text-red-400 mt-1">{item.error}</div>
+                  )}
                 </div>
               ))}
             </div>
