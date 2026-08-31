@@ -5,6 +5,7 @@ import { getAccountState, getBalance, getRunway } from './paymentsClient.ts'
 import { runDecisionLoop, type Dataset, type DecisionResult } from './decisionLoop.ts'
 import { generateExplanation, generateFallbackExplanation, type ExplanationInput } from './explain.ts'
 import { pauseDataset, type InterventionResult } from './intervention.ts'
+import * as SP from '@filoz/synapse-core/sp'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 
@@ -121,6 +122,35 @@ app.post('/api/act', async (req, res) => {
   }
 })
 
+app.get('/api/verify-pause/:datasetId', async (req, res) => {
+  try {
+    const datasetId = req.params.datasetId
+    const datasets = loadDatasets()
+    const dataset = datasets.find((d) => d.datasetId === datasetId)
+
+    if (!dataset) {
+      return res.status(404).json({ error: 'Dataset not found' })
+    }
+
+    try {
+      await SP.findPiece({
+        pieceCid: dataset.pieceCid as any,
+        serviceURL: dataset.provider,
+        poll: false,
+      })
+      res.json({ accessible: true, message: 'Piece is still accessible on provider' })
+    } catch (err) {
+      res.json({
+        accessible: false,
+        message: 'Piece not found on provider — pause/termination confirmed',
+      })
+    }
+  } catch (err) {
+    console.error('GET /api/verify-pause error:', err)
+    res.status(500).json({ error: 'Verification failed' })
+  }
+})
+
 app.get('/api/check', async (_req, res) => {
   try {
     const decision = await runDecisionLoop()
@@ -191,4 +221,5 @@ app.listen(PORT, () => {
   console.log(`  GET  /api/decisions`)
   console.log(`  GET  /api/interventions`)
   console.log(`  POST /api/act`)
+  console.log(`  GET  /api/verify-pause/:datasetId`)
 })
