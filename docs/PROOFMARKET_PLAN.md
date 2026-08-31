@@ -168,3 +168,13 @@ This is faster, more reliable live, and just as convincing — the numbers are p
 ## 10. Immediate Next Action
 
 **Today, before anything else:** get Calibration testnet USDFC from the faucet and run a throwaway script that reads real balance and `runwayInEpochs`. This is the hard gate from §5 — nothing else in this plan matters until that number is confirmed real and readable.
+
+---
+
+## 11. Git Workflow Rule (non-negotiable)
+Never commit or push directly to main. Not once, not "just this small fix" — no exceptions.
+Always ask before every commit and every push, regardless of branch. State what's about to be committed/pushed and wait for explicit confirmation before running the command.
+Create a new branch at every phase change in the plan above (e.g. moving from Step 2 → Step 3, from primitives → decision loop, from decision loop → dashboard, from dashboard → real intervention, etc.). One branch per phase, not one branch for the whole project.
+Suggested branch naming: phase/<short-name>, e.g. phase/hard-gate, phase/fund-and-upload, phase/triage-loop, phase/llm-explanation, phase/dashboard, phase/real-intervention, phase/calibration, phase/hardening.
+Merges into main only happen when explicitly requested and confirmed — treat main as the protected, demo-stable branch throughout the build, not a working branch.
+This applies to Kilo Code (or any coding agent) as much as to manual work — the agent must ask before running git commit or git push, on any branch, every time.
