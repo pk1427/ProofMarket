@@ -324,5 +324,37 @@
     "resumeCandidate": null,
     "reason": "Runway 104999996 epochs is above threshold 100000000. No action needed.",
     "explanation": "With a runway of 104,999,996 epochs comfortably exceeding the 100,000,000-epoch threshold, this two-dataset portfolio — **customer-model-v3.txt** (declared value: 9) and **raw-sensor-archive.txt** (declared value: 3) — requires no immediate intervention. The combined cost of 0.1666667 USDFC per epoch is well supported by the current balance of 233.333325847746 USDFC and the onchain lockup rate of 0.2222222 USDFC/epoch. Although **raw-sensor-archive.txt** carries lower declared value and could theoretically be deprioritized in a future budget crunch, the present surplus means both datasets can continue storing without trade-offs. No funds need to be topped up, and no dataset needs to be dropped or downgraded at this time."
+  },
+  {
+    "timestamp": "2026-09-01T22:49:37.094Z",
+    "outcome": "healthy",
+    "balance": "232713061125233598010",
+    "runway": "104720876",
+    "lockupRate": "2222222235587",
+    "currentEpoch": "4032552",
+    "totalCostPerEpoch": "1666666673349",
+    "remainingEpochs": "104720876",
+    "threshold": "100000000",
+    "protectedDataset": null,
+    "pausedDataset": null,
+    "resumeCandidate": null,
+    "reason": "Runway 104720876 epochs is above threshold 100000000. No action needed.",
+    "explanation": "With a runway of 104,720,876 epochs against a threshold of 100,000,000 epochs, this portfolio is comfortably funded and requires no immediate intervention. The two stored datasets — **customer-model-v3.txt** (high declared value of 9) and **raw-sensor-archive.txt** (lower declared value of 3) — are both being retained at a combined lockup rate of just 0.000002 USDFC per epoch, drawing on a balance of 232.713061 USDFC. Even though raw-sensor-archive.txt carries lower business priority, the storage cost is so minimal that there is no economic justification to drop it right now. The portfolio has sufficient runway to sustain both datasets well beyond the threshold before any triage decision becomes necessary."
+  },
+  {
+    "timestamp": "2026-09-01T22:58:28.255Z",
+    "outcome": "healthy",
+    "balance": "232713023347455593031",
+    "runway": "104720859",
+    "lockupRate": "2222222235587",
+    "currentEpoch": "4032569",
+    "totalCostPerEpoch": "1666666673349",
+    "remainingEpochs": "104720859",
+    "threshold": "100000000",
+    "protectedDataset": null,
+    "pausedDataset": null,
+    "resumeCandidate": null,
+    "reason": "Runway 104720859 epochs is above threshold 100000000. No action needed.",
+    "explanation": "With a current runway of 104,720,859 epochs against a threshold of 100,000,000 epochs, this storage portfolio — comprising **customer-model-v3.txt** (high declared value: 9) and **raw-sensor-archive.txt** (lower declared value: 3) — is comfortably funded and requires no immediate intervention. The combined lockup rate of 0.000002 USDFC/epoch is extremely low relative to the 232.713023 USDFC balance, meaning both datasets remain well-protected without any prioritization trade-offs being necessary right now. If the runway were to dip below threshold, **raw-sensor-archive.txt** would be the first candidate for removal given its lower declared value, preserving **customer-model-v3.txt** — but that decision point is not yet reached."
   }
 ]
