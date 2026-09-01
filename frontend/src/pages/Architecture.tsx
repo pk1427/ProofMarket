@@ -172,8 +172,9 @@ export default function Architecture() {
                 <ul className="space-y-2">
                   {[
                     'USDFC balance via Synapse SDK',
-                    'Runway in epochs from Filecoin Pay',
-                    'Lockup rate per epoch',
+                    'Runway in epochs from Filecoin Pay (runwayInEpochs)',
+                    'Lockup rate per epoch (accountSummary.lockupRatePerEpoch)',
+                    'Per-dataset rail payment rate (getRail.paymentRate)',
                     'Dataset pause/termination transaction',
                     'Current epoch number',
                     'Payment rail status',
@@ -194,8 +195,8 @@ export default function Architecture() {
                 <ul className="space-y-2">
                   {[
                     'declared_value (dataset priority)',
-                    'cost_per_epoch (scaled by size)',
-                    'Triage threshold (10k epochs)',
+                    'cost_per_epoch in datasets.json (legacy display only; decision logic uses real rail rates)',
+                    'Triage threshold (configurable via env, calibrated to real onchain rates)',
                     'Target demo balance',
                     'LLM explanation (generated)',
                   ].map((item) => (

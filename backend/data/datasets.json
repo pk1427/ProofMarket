@@ -7,16 +7,18 @@
     "datasetId": "31816",
     "pieceCid": "bafkzcibcaabksivmka62dqik6ts74ncdgxdqzpuzq7ay3rb4j42bvwbkhnuekmq",
     "provider": "https://calib2.ezpdpz.net",
-    "status": "active"
+    "status": "active",
+    "pdpRailId": "36439"
   },
   {
     "name": "raw-sensor-archive.txt",
     "declaredValue": 3,
     "sizeBytes": 127,
     "costPerEpoch": "12700000000000000",
-    "datasetId": "31817",
-    "pieceCid": "bafkzcibcaabb5d7vd5ewxmqin6p5q6rvgzzip535ptiys65ptcqsuzazmebvygq",
+    "datasetId": "32681",
+    "pieceCid": "bafkzcibcaabexz77kt4tkpdsbr6qmihn4dczf377z6myqluaa2niybv6k4uxafq",
     "provider": "https://calib2.ezpdpz.net",
-    "status": "paused"
+    "status": "active",
+    "pdpRailId": "37316"
   }
 ]

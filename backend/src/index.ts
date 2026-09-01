@@ -4,7 +4,7 @@ import cors from 'cors'
 import { getAccountState, getBalance, getRunway } from './paymentsClient.ts'
 import { runDecisionLoop, type Dataset, type DecisionResult } from './decisionLoop.ts'
 import { generateExplanation, generateFallbackExplanation, type ExplanationInput } from './explain.ts'
-import { pauseDataset, type InterventionResult } from './intervention.ts'
+import { pauseDataset, resumeDataset, type InterventionResult } from './intervention.ts'
 import * as SP from '@filoz/synapse-core/sp'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
@@ -147,6 +147,26 @@ app.post('/api/act', async (req, res) => {
   }
 })
 
+app.post('/api/resume', async (req, res) => {
+  try {
+    const { datasetId, datasetName } = req.body ?? {}
+    if (!datasetId || !datasetName) {
+      return res.status(400).json({ error: 'datasetId and datasetName are required' })
+    }
+
+    const numericId = BigInt(datasetId)
+    if (numericId <= 0n) {
+      return res.status(400).json({ error: 'Invalid datasetId' })
+    }
+
+    const result = await resumeDataset(datasetId, datasetName)
+    res.json(result)
+  } catch (err) {
+    console.error('POST /api/resume error:', err)
+    res.status(500).json({ error: 'Resume failed' })
+  }
+})
+
 app.get('/api/verify-pause/:datasetId', async (req, res) => {
   try {
     const datasetId = req.params.datasetId
@@ -184,7 +204,7 @@ app.get('/api/check', async (_req, res) => {
     let explanation: string | undefined
     try {
       const input: ExplanationInput = {
-        outcome: decision.outcome,
+        outcome: decision.outcome as any,
         balance: decision.balance,
         runway: decision.runway,
         lockupRate: decision.lockupRate,
@@ -194,6 +214,7 @@ app.get('/api/check', async (_req, res) => {
         threshold: decision.threshold,
         protectedDataset: decision.protectedDataset,
         pausedDataset: decision.pausedDataset,
+        resumeCandidate: decision.resumeCandidate,
         reason: decision.reason,
         datasets: datasets.map(d => ({
           name: d.name,
@@ -205,7 +226,7 @@ app.get('/api/check', async (_req, res) => {
     } catch (err) {
       console.error('Claude explanation failed, using fallback:', err)
       const input: ExplanationInput = {
-        outcome: decision.outcome,
+        outcome: decision.outcome as any,
         balance: decision.balance,
         runway: decision.runway,
         lockupRate: decision.lockupRate,
@@ -215,6 +236,7 @@ app.get('/api/check', async (_req, res) => {
         threshold: decision.threshold,
         protectedDataset: decision.protectedDataset,
         pausedDataset: decision.pausedDataset,
+        resumeCandidate: decision.resumeCandidate,
         reason: decision.reason,
         datasets: datasets.map(d => ({
           name: d.name,
