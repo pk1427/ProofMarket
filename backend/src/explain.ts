@@ -11,11 +11,26 @@ const WEI_PER_USDFC = 10n ** 18n
 export function weiToUSDFC(wei: string | bigint | number, fractionDigits = 6): string {
   const value = BigInt(wei)
   if (value === 0n) return '0'
+
   const whole = value / WEI_PER_USDFC
   const remainder = value % WEI_PER_USDFC
-  const fraction = Number(remainder * 10n ** BigInt(fractionDigits)) / Number(WEI_PER_USDFC)
-  const formatted = fraction.toFixed(fractionDigits).replace(/0+$/, '').replace(/\.$/, '')
-  return formatted ? `${whole.toString()}.${formatted}` : whole.toString()
+
+  const scaled = remainder * 10n ** BigInt(fractionDigits)
+  const fraction = scaled / WEI_PER_USDFC
+  const fracRemainder = scaled % WEI_PER_USDFC
+
+  const rounded = fracRemainder * 2n >= WEI_PER_USDFC ? fraction + 1n : fraction
+
+  let finalWhole = whole
+  let finalFraction = rounded
+  if (finalFraction >= 10n ** BigInt(fractionDigits)) {
+    finalWhole += 1n
+    finalFraction -= 10n ** BigInt(fractionDigits)
+  }
+
+  const fractionStr = finalFraction.toString().padStart(fractionDigits, '0').replace(/0+$/, '')
+
+  return fractionStr ? `${finalWhole.toString()}.${fractionStr}` : finalWhole.toString()
 }
 
 export type ExplanationInput = {
