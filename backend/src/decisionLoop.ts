@@ -111,6 +111,8 @@ export async function runDecisionLoop(): Promise<DecisionResult> {
     reason = `Runway ${remainingEpochs.toString()} epochs is below threshold ${TRIAGE_THRESHOLD_EPOCHS}. ` +
       `Protected ${higher.name} (declared_value=${higher.declaredValue}) over ${lower.name} (declared_value=${lower.declaredValue}) by priority.`
   } else if (pausedDatasets.length > 0 && activeDatasets.length === 1) {
+    pausedDataset = pausedDatasets[0].name
+    resumeCandidate = pausedDatasets[0].name
     const pausedRate = pausedRates[0]
     const projectedLockupRate = state.lockupRate + pausedRate
     const projectedRemainingEpochs = projectedLockupRate > 0n ? state.balance / projectedLockupRate : state.runway
@@ -118,12 +120,10 @@ export async function runDecisionLoop(): Promise<DecisionResult> {
 
     if (projectedRemainingEpochs >= safeThreshold) {
       outcome = 'resume_safe'
-      resumeCandidate = pausedDatasets[0].name
       reason = `Runway recovered to ${remainingEpochs.toString()} epochs. Resuming ${pausedDatasets[0].name} would leave ` +
         `${projectedRemainingEpochs.toString()} epochs projected, safely above the ${safeThreshold.toString()}-epoch safety margin.`
     } else if (projectedRemainingEpochs >= BigInt(TRIAGE_THRESHOLD_EPOCHS)) {
       outcome = 'resume_available'
-      resumeCandidate = pausedDatasets[0].name
       reason = `Runway recovered to ${remainingEpochs.toString()} epochs, but resuming ${pausedDatasets[0].name} would only leave ` +
         `${projectedRemainingEpochs.toString()} projected epochs — above threshold but without the ${RESUME_MARGIN_EPOCHS}-epoch safety margin.`
     } else {
