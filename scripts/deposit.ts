@@ -13,7 +13,7 @@ if (!PRIVATE_KEY) {
 const normalizedKey = PRIVATE_KEY.startsWith('0x') ? PRIVATE_KEY : `0x${PRIVATE_KEY}`
 
 // CONFIG: tune this amount during Day 7 calibration
-const DEPOSIT_AMOUNT = BigInt(10_000_000_000_000_000_000)
+const DEPOSIT_AMOUNT = BigInt(process.env.DEPOSIT_AMOUNT ?? '10000000000000000000')
 const MAX_LOCKUP_PERIOD = 100000n
 
 async function main() {

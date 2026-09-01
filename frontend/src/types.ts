@@ -18,7 +18,7 @@ export type Dataset = {
 
 export type DecisionResult = {
   timestamp: string
-  outcome: 'healthy' | 'critical'
+  outcome: 'healthy' | 'critical' | 'resume_safe' | 'resume_available' | 'resume_insufficient'
   balance: string
   runway: string
   lockupRate: string
@@ -28,15 +28,17 @@ export type DecisionResult = {
   threshold: string
   protectedDataset: string | null
   pausedDataset: string | null
+  resumeCandidate: string | null
   reason: string
   explanation?: string
 }
 
 export type InterventionResult = {
   timestamp: string
-  action: 'pause'
+  action: 'pause' | 'resume'
   datasetName: string
   datasetId: string
+  newDatasetId?: string
   txHash?: string
   endEpoch?: string
   status: 'pending' | 'completed' | 'failed'

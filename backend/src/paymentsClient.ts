@@ -25,18 +25,18 @@ export function createPaymentsClient() {
     source: 'proofmarket-backend',
   })
 
-  return synapse
+  return { synapse, client, account }
 }
 
 export async function getBalance(): Promise<bigint> {
-  const synapse = createPaymentsClient()
+  const { synapse } = createPaymentsClient()
   return await synapse.payments.walletBalance({
     token: TOKENS.USDFC,
   })
 }
 
 export async function getRunway(): Promise<bigint> {
-  const synapse = createPaymentsClient()
+  const { synapse } = createPaymentsClient()
   const summary = await synapse.payments.accountSummary({
     token: TOKENS.USDFC,
   })
@@ -49,7 +49,7 @@ export async function getAccountState(): Promise<{
   lockupRate: bigint
   currentEpoch: bigint
 }> {
-  const synapse = createPaymentsClient()
+  const { synapse } = createPaymentsClient()
   const summary = await synapse.payments.accountSummary({
     token: TOKENS.USDFC,
   })

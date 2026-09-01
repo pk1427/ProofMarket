@@ -7,5 +7,22 @@
     "status": "completed",
     "txHash": "0x71ecd863f1fa7e7ec01af6796ecf357ed84e449c2b9f06594ee1d0f3b1dde615",
     "endEpoch": "4115299"
+  },
+  {
+    "timestamp": "2026-09-01T20:55:37.163Z",
+    "action": "resume",
+    "datasetName": "raw-sensor-archive.txt",
+    "datasetId": "31817",
+    "status": "failed",
+    "error": "Invalid upload size.\n\nDetails: Size 107 bytes is below minimum allowed size of 127 bytes or exceeds maximum allowed size of 1065353216 bytes (1 GiB with fr32 expansion)"
+  },
+  {
+    "timestamp": "2026-09-01T20:57:05.474Z",
+    "action": "resume",
+    "datasetName": "raw-sensor-archive.txt",
+    "datasetId": "31817",
+    "status": "completed",
+    "newDatasetId": "32681",
+    "txHash": "0xdaee64fa4d0fde281f5eb4b2580ccd94a0e0ac30c21bde0dd355f4b2341509c6"
   }
 ]

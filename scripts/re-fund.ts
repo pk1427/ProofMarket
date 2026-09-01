@@ -12,8 +12,8 @@ if (!PRIVATE_KEY) {
 const normalizedKey = PRIVATE_KEY.startsWith('0x') ? PRIVATE_KEY : `0x${PRIVATE_KEY}`
 
 // CONFIG: tuned for 2-3 minute demo window
-const TRIAGE_THRESHOLD_EPOCHS = 10000
-const TARGET_REMAINING_EPOCHS = 10005
+const TRIAGE_THRESHOLD_EPOCHS = Number(process.env.TRIAGE_THRESHOLD_EPOCHS ?? 100_000_000)
+const TARGET_REMAINING_EPOCHS = Number(process.env.TARGET_REMAINING_EPOCHS ?? 100_005_000)
 const MAX_LOCKUP_PERIOD = 100000n
 
 async function main() {

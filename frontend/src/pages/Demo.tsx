@@ -134,6 +134,31 @@ export default function Demo() {
     }
   }
 
+  const resumeDataset = async () => {
+    if (!latestDecision?.resumeCandidate) return
+    setLoading(true)
+    setError(null)
+    try {
+      const dataset = datasets.find((d) => d.name === latestDecision.resumeCandidate)
+      if (!dataset) throw new Error('Resume candidate not found')
+
+      const res = await fetch(`${API_BASE}/api/resume`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ datasetId: dataset.datasetId, datasetName: dataset.name }),
+      })
+      if (!res.ok) throw new Error('Resume failed')
+      const result = await res.json()
+      setInterventions((prev) => [...prev, result])
+      setLatestDecision(null)
+      await Promise.all([fetchDatasets(), fetchAccount(), fetchDecisions()])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Resume failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const verifyPause = async (datasetId: string) => {
     setVerifyingId(datasetId)
     setError(null)
@@ -155,14 +180,10 @@ export default function Demo() {
     return () => clearInterval(interval)
   }, [refreshAll])
 
-  const totalCostPerEpoch = Number(account?.lockupRate ?? 0)
-  const remainingEpochs = account
-    ? totalCostPerEpoch > 0
-      ? Math.floor(Number(account.balance) / totalCostPerEpoch)
-      : Number(account.runway)
-    : null
-  const threshold = 10000
-  const isHealthy = latestDecision ? latestDecision.outcome === 'healthy' : remainingEpochs !== null && remainingEpochs >= threshold
+  const remainingEpochs = account ? Number(account.runway) : null
+  const threshold = latestDecision ? Number(latestDecision.threshold) : 10000
+  const healthyOutcomes = ['healthy', 'resume_safe', 'resume_available']
+  const isHealthy = latestDecision ? healthyOutcomes.includes(latestDecision.outcome) : remainingEpochs !== null && remainingEpochs >= threshold
   const progress = remainingEpochs !== null ? Math.min(100, Math.max(0, (remainingEpochs / threshold) * 100)) : 0
 
   return (
@@ -264,7 +285,7 @@ export default function Demo() {
 
               <div className="text-right">
                 <div className="text-xs text-gray-500">Triage Threshold</div>
-                <div className="text-lg font-mono text-white">10,000 epochs</div>
+                <div className="text-lg font-mono text-white">{threshold.toLocaleString()} epochs</div>
               </div>
             </div>
           )}
@@ -312,7 +333,7 @@ export default function Demo() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Total Cost / Epoch</span>
-                      <span className="text-2xl font-mono text-white">{formatWei(totalCostPerEpoch.toString())} <span className="text-sm text-gray-500">USDFC</span></span>
+                      <span className="text-2xl font-mono text-white">{formatWei(account.lockupRate)} <span className="text-sm text-gray-500">USDFC</span></span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Remaining Epochs</span>
@@ -322,7 +343,7 @@ export default function Demo() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Threshold</span>
-                      <span className="text-2xl font-mono text-white">10,000</span>
+                      <span className="text-2xl font-mono text-white">{threshold.toLocaleString()}</span>
                     </div>
                     <div className="pt-4 border-t border-gray-800">
                       <div className="text-xs text-gray-500 mb-2">Status</div>
@@ -344,7 +365,11 @@ export default function Demo() {
                 <div className="space-y-4">
                   <div>
                     <div className="text-xs text-gray-500 mb-1">Outcome</div>
-                    <div className={`text-3xl font-bold ${latestDecision.outcome === 'critical' ? 'text-red-400' : 'text-green-400'}`}>
+                    <div className={`text-3xl font-bold ${
+                      latestDecision.outcome === 'critical' ? 'text-red-400' :
+                      latestDecision.outcome === 'resume_insufficient' ? 'text-yellow-400' :
+                      'text-green-400'
+                    }`}>
                       {latestDecision.outcome.toUpperCase()}
                     </div>
                   </div>
@@ -360,6 +385,13 @@ export default function Demo() {
                     <div className="p-3 bg-red-900/20 border border-red-800/50 rounded-xl">
                       <div className="text-xs text-red-400 mb-1">Paused / Dropped</div>
                       <div className="text-sm font-medium text-red-300">{latestDecision.pausedDataset}</div>
+                    </div>
+                  )}
+
+                  {latestDecision.resumeCandidate && (
+                    <div className="p-3 bg-blue-900/20 border border-blue-800/50 rounded-xl">
+                      <div className="text-xs text-blue-400 mb-1">Resume Candidate</div>
+                      <div className="text-sm font-medium text-blue-300">{latestDecision.resumeCandidate}</div>
                     </div>
                   )}
 
@@ -387,6 +419,40 @@ export default function Demo() {
                       </button>
                     )
                   })()}
+
+                  {(latestDecision.outcome === 'resume_safe' || latestDecision.outcome === 'resume_available') && latestDecision.resumeCandidate && (() => {
+                    const isPaused = datasets.some(
+                      (d) => d.name === latestDecision.resumeCandidate && d.status === 'paused'
+                    )
+                    if (!isPaused) {
+                      return (
+                        <div className="p-3 bg-green-900/20 border border-green-800/50 rounded-xl">
+                          <div className="text-xs text-green-400 font-medium">Already active</div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {latestDecision.resumeCandidate} is already active.
+                          </p>
+                        </div>
+                      )
+                    }
+                    return (
+                      <button
+                        onClick={resumeDataset}
+                        disabled={loading}
+                        className="w-full px-4 py-3 bg-blue-700 hover:bg-blue-600 disabled:bg-gray-700 text-white font-semibold rounded-xl transition"
+                      >
+                        {loading ? 'Resuming...' : `Resume ${latestDecision.resumeCandidate}`}
+                      </button>
+                    )
+                  })()}
+
+                  {latestDecision.outcome === 'resume_insufficient' && latestDecision.resumeCandidate && (
+                    <div className="p-3 bg-yellow-900/20 border border-yellow-800/50 rounded-xl">
+                      <div className="text-xs text-yellow-400 font-medium">Resume not safe yet</div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Runway has recovered but resuming {latestDecision.resumeCandidate} would still put the account below threshold.
+                      </p>
+                    </div>
+                  )}
 
                   <div>
                     <div className="text-xs text-gray-500 mb-1">Reason</div>
