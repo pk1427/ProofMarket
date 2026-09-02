@@ -181,7 +181,7 @@ export default function Demo() {
   }, [refreshAll])
 
   const remainingEpochs = account ? Number(account.runway) : null
-  const threshold = latestDecision ? Number(latestDecision.threshold) : 10000
+  const threshold = latestDecision ? Number(latestDecision.threshold) : 100000000
   const healthyOutcomes = ['healthy', 'resume_safe', 'resume_available']
   const isHealthy = latestDecision ? healthyOutcomes.includes(latestDecision.outcome) : remainingEpochs !== null && remainingEpochs >= threshold
   const progress = remainingEpochs !== null ? Math.min(100, Math.max(0, (remainingEpochs / threshold) * 100)) : 0
@@ -189,21 +189,20 @@ export default function Demo() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-b border-gray-800">
+      <nav className="fixed top-0 left-0 right-0 z-50 glass-strong">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">PM</span>
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+            <span className="text-xl font-bold gradient-text-subtle">
               ProofMarket
             </span>
           </Link>
-          <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
-            <Link to="/" className="hover:text-white transition">Home</Link>
-            <span className="text-white">Live Demo</span>
-            <Link to="/verification" className="hover:text-white transition">Verification</Link>
-            <Link to="/architecture" className="hover:text-white transition">Architecture</Link>
+          <div className="hidden md:flex items-center gap-8 text-sm">
+            <Link to="/" className="nav-link">Home</Link>
+            <span className="text-white font-medium">Live Demo</span>
+            <Link to="/verification" className="nav-link">Verification</Link>
           </div>
           <a
             href="https://github.com/pk1427/ProofMarket"
@@ -217,25 +216,44 @@ export default function Demo() {
       </nav>
 
       {/* Demo Section */}
-      <section id="demo" className="pt-32 pb-24 px-6 bg-gradient-to-b from-black via-gray-900 to-black">
-        <div className="max-w-7xl mx-auto">
+      <section id="demo" className="pt-32 pb-24 px-6 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-black via-gray-900 to-black" />
+        <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Live Demo</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto mb-6">
-              This dashboard is connected to a real Calibration testnet account. 
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 gradient-text">Live Demo</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto mb-8 text-lg">
+              This dashboard is connected to a real Calibration testnet account.
               Every number you see is pulled from Filecoin Pay via the Synapse SDK.
             </p>
             <button
               onClick={runCheck}
               disabled={loading}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-500 hover:to-purple-500 disabled:from-gray-600 disabled:to-gray-600 transition shadow-lg shadow-blue-900/20"
+              className="group relative inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl overflow-hidden transition-all duration-300 shadow-lg shadow-blue-900/20 hover:shadow-xl hover:shadow-blue-900/40 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {loading ? 'Checking...' : 'Check Now'}
+              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-blue-500 to-purple-500 transition-transform duration-500 group-hover:translate-x-0" />
+              <span className="relative flex items-center gap-2">
+                {loading ? (
+                  <>
+                    <span className="spinner" />
+                    Checking...
+                  </>
+                ) : (
+                  <>
+                    Check Now
+                    <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </>
+                )}
+              </span>
             </button>
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-900/40 border border-red-700 rounded-lg text-red-200">
+            <div className="mb-6 p-4 bg-red-900/40 border border-red-700/50 rounded-xl text-red-200 flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
               {error}
             </div>
           )}
@@ -244,17 +262,17 @@ export default function Demo() {
           {account && (
             <div className={`mb-8 p-6 rounded-2xl border flex flex-col md:flex-row items-center justify-between gap-4 ${
               isHealthy
-                ? 'bg-gradient-to-r from-green-900/30 to-emerald-900/20 border-green-700/50'
-                : 'bg-gradient-to-r from-red-900/30 to-orange-900/20 border-red-700/50'
+                ? 'glass border-green-700/50'
+                : 'glass border-red-700/50'
             }`}>
               <div className="flex items-center gap-4">
                 <div className={`relative flex h-4 w-4`}>
                   {isHealthy && (
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
                   )}
                   <span className={`relative inline-flex rounded-full h-4 w-4 ${
                     isHealthy ? 'bg-green-500' : 'bg-red-500'
-                  }`}></span>
+                  }`} />
                 </div>
                 <div>
                   <div className={`text-2xl font-bold ${
@@ -267,7 +285,7 @@ export default function Demo() {
                   </div>
                 </div>
               </div>
-              
+               
               <div className="flex-1 max-w-md">
                 <div className="flex justify-between text-xs text-gray-500 mb-1">
                   <span>Runway remaining</span>
@@ -279,7 +297,7 @@ export default function Demo() {
                       isHealthy ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-gradient-to-r from-red-500 to-orange-500'
                     }`}
                     style={{ width: `${progress}%` }}
-                  ></div>
+                  />
                 </div>
               </div>
 
@@ -294,7 +312,7 @@ export default function Demo() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             {/* Account State */}
             <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+              <div className="card-glass">
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-6">Account State</h3>
                 {account ? (
                   <div className="space-y-4">
@@ -327,7 +345,7 @@ export default function Demo() {
                 )}
               </div>
 
-              <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+              <div className="card-glass">
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-6">Portfolio</h3>
                 {account ? (
                   <div className="space-y-4">
@@ -359,7 +377,7 @@ export default function Demo() {
             </div>
 
             {/* Latest Decision */}
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+            <div className="card-glass">
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-6">Latest Decision</h3>
               {latestDecision ? (
                 <div className="space-y-4">
@@ -373,14 +391,14 @@ export default function Demo() {
                       {latestDecision.outcome.toUpperCase()}
                     </div>
                   </div>
-                  
+                   
                   {latestDecision.protectedDataset && (
                     <div className="p-3 bg-green-900/20 border border-green-800/50 rounded-xl">
                       <div className="text-xs text-green-400 mb-1">Protected</div>
                       <div className="text-sm font-medium text-green-300">{latestDecision.protectedDataset}</div>
                     </div>
                   )}
-                  
+                   
                   {latestDecision.pausedDataset && (
                     <div className="p-3 bg-red-900/20 border border-red-800/50 rounded-xl">
                       <div className="text-xs text-red-400 mb-1">Paused / Dropped</div>
@@ -413,7 +431,7 @@ export default function Demo() {
                       <button
                         onClick={executeIntervention}
                         disabled={loading}
-                        className="w-full px-4 py-3 bg-red-700 hover:bg-red-600 disabled:bg-gray-700 text-white font-semibold rounded-xl transition"
+                        className="w-full btn-danger"
                       >
                         {loading ? 'Pausing...' : `Pause ${latestDecision.pausedDataset}`}
                       </button>
@@ -438,7 +456,7 @@ export default function Demo() {
                       <button
                         onClick={resumeDataset}
                         disabled={loading}
-                        className="w-full px-4 py-3 bg-blue-700 hover:bg-blue-600 disabled:bg-gray-700 text-white font-semibold rounded-xl transition"
+                        className="w-full btn-success"
                       >
                         {loading ? 'Resuming...' : `Resume ${latestDecision.resumeCandidate}`}
                       </button>
@@ -475,16 +493,16 @@ export default function Demo() {
           {/* Dataset Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {datasets.map((ds) => (
-              <div key={ds.datasetId} className="bg-gray-900 border border-gray-800 rounded-2xl p-6 hover:border-gray-700 transition">
+              <div key={ds.datasetId} className="card-glass group">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-xl font-semibold text-white">{ds.name}</h3>
-                  <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${
-                    ds.status === 'active' ? 'bg-green-900/40 text-green-300 border border-green-800/50' : 'bg-red-900/40 text-red-300 border border-red-800/50'
+                  <span className={`badge ${
+                    ds.status === 'active' ? 'badge-success' : 'badge-danger'
                   }`}>
                     {ds.status.toUpperCase()}
                   </span>
                 </div>
-                
+                 
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">Declared Value <RealBadge /></span>
@@ -546,7 +564,7 @@ export default function Demo() {
 
           {/* Claude Explanation + Logs */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+            <div className="card-glass">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-pink-500 rounded-lg flex items-center justify-center">
                   <span className="text-white text-xs font-bold">AI</span>
@@ -560,7 +578,7 @@ export default function Demo() {
               )}
             </div>
 
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+            <div className="card-glass">
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Decision Log</h3>
               <div className="space-y-3 max-h-64 overflow-y-auto">
                 {decisions.length === 0 && (
@@ -582,7 +600,7 @@ export default function Demo() {
               </div>
             </div>
 
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+            <div className="card-glass">
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Intervention Log</h3>
               <div className="space-y-3 max-h-64 overflow-y-auto">
                 {interventions.length === 0 && (
