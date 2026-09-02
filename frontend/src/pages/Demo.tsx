@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import type { AccountState, Dataset, DecisionResult, InterventionResult } from '../types'
 
-const API_BASE = 'http://localhost:3001'
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001'
 
 function formatWei(wei: string, decimals = 18) {
   const value = Number(wei) / 10 ** decimals

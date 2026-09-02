@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import type { Dataset, InterventionResult } from '../types'
 
-const API_BASE = 'http://localhost:3001'
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001'
 
 function ExplorerLink({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) {
   return (
