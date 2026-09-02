@@ -74,21 +74,20 @@ export default function Verification() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-b border-gray-800">
+      <nav className="fixed top-0 left-0 right-0 z-50 glass-strong">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">PM</span>
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+            <span className="text-xl font-bold gradient-text-subtle">
               ProofMarket
             </span>
           </Link>
-          <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
-            <Link to="/" className="hover:text-white transition">Home</Link>
-            <Link to="/demo" className="hover:text-white transition">Live Demo</Link>
-            <span className="text-white">Verification</span>
-            <Link to="/architecture" className="hover:text-white transition">Architecture</Link>
+          <div className="hidden md:flex items-center gap-8 text-sm">
+            <Link to="/" className="nav-link">Home</Link>
+            <Link to="/demo" className="nav-link">Live Demo</Link>
+            <span className="text-white font-medium">Verification</span>
           </div>
           <a
             href="https://github.com/pk1427/ProofMarket"
@@ -102,11 +101,12 @@ export default function Verification() {
       </nav>
 
       {/* Verification Section */}
-      <section className="pt-32 pb-24 px-6">
-        <div className="max-w-6xl mx-auto">
+      <section className="pt-32 pb-24 px-6 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-black via-gray-900 to-black" />
+        <div className="max-w-6xl mx-auto relative z-10">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Verification</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 gradient-text">Verification</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-lg">
               Prove the intervention is real. After pausing a dataset, click Verify Pause to check 
               whether the provider still serves the piece. A terminated payment rail means no new charges, 
               even if cached copies remain briefly.
@@ -114,34 +114,37 @@ export default function Verification() {
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-900/40 border border-red-700 rounded-lg text-red-200">
+            <div className="mb-6 p-4 bg-red-900/40 border border-red-700/50 rounded-xl text-red-200 flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
               {error}
             </div>
           )}
 
           {/* Intervention History */}
           <div className="mb-12">
-            <h3 className="text-2xl font-bold mb-6">Intervention History</h3>
+            <h3 className="text-2xl font-bold mb-6 gradient-text">Intervention History</h3>
             {interventions.length === 0 ? (
-              <div className="p-8 bg-gray-900 border border-gray-800 rounded-2xl text-center text-gray-500">
+              <div className="p-8 card-glass text-center text-gray-500">
                 No interventions executed yet. Go to the Live Demo to run a triage check.
               </div>
             ) : (
               <div className="space-y-4">
                 {[...interventions].reverse().map((item, idx) => (
-                  <div key={item.timestamp + idx} className="p-6 bg-gray-900 border border-gray-800 rounded-2xl">
+                  <div key={item.timestamp + idx} className="card-glass">
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <div className="text-xs text-gray-500 mb-1">Dataset</div>
                         <div className="text-lg font-semibold text-white">{item.datasetName} #{item.datasetId}</div>
                       </div>
-                      <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${
-                        item.status === 'completed' ? 'bg-green-900/40 text-green-300 border border-green-800/50' : 'bg-red-900/40 text-red-300 border border-red-800/50'
+                      <span className={`badge ${
+                        item.status === 'completed' ? 'badge-success' : 'badge-danger'
                       }`}>
                         {item.status.toUpperCase()}
                       </span>
                     </div>
-                    
+                     
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                        {item.txHash && (
                          <div>
@@ -151,19 +154,31 @@ export default function Verification() {
                            </ExplorerLink>
                          </div>
                        )}
-                      {item.endEpoch && (
-                        <div>
-                          <div className="text-xs text-gray-500 mb-1">End Epoch</div>
-                          <div className="font-mono text-gray-300">{item.endEpoch}</div>
-                        </div>
-                      )}
-                    </div>
+                       {item.action && (
+                         <div>
+                           <div className="text-xs text-gray-500 mb-1">Action</div>
+                           <div className="font-mono text-gray-300 capitalize">{item.action}</div>
+                         </div>
+                       )}
+                       {item.newDatasetId && (
+                         <div>
+                           <div className="text-xs text-gray-500 mb-1">New Dataset ID</div>
+                           <div className="font-mono text-gray-300">#{item.newDatasetId}</div>
+                         </div>
+                       )}
+                       {item.endEpoch && (
+                         <div>
+                           <div className="text-xs text-gray-500 mb-1">End Epoch</div>
+                           <div className="font-mono text-gray-300">{item.endEpoch}</div>
+                         </div>
+                       )}
+                     </div>
 
-                    {item.error && (
-                      <div className="mt-4 p-3 bg-red-900/20 border border-red-800/50 rounded-xl text-sm text-red-300">
-                        {item.error}
-                      </div>
-                    )}
+                     {item.error && (
+                       <div className="mt-4 p-3 bg-red-900/20 border border-red-800/50 rounded-xl text-sm text-red-300">
+                         {item.error}
+                       </div>
+                     )}
                   </div>
                 ))}
               </div>
@@ -172,14 +187,14 @@ export default function Verification() {
 
           {/* Dataset Verification */}
           <div>
-            <h3 className="text-2xl font-bold mb-6">Dataset State</h3>
+            <h3 className="text-2xl font-bold mb-6 gradient-text">Dataset State</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {datasets.map((ds) => (
-                <div key={ds.datasetId} className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+                <div key={ds.datasetId} className="card-glass">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-lg font-semibold text-white">{ds.name}</h4>
-                    <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${
-                      ds.status === 'active' ? 'bg-green-900/40 text-green-300 border border-green-800/50' : 'bg-red-900/40 text-red-300 border border-red-800/50'
+                    <span className={`badge ${
+                      ds.status === 'active' ? 'badge-success' : 'badge-danger'
                     }`}>
                       {ds.status.toUpperCase()}
                     </span>
