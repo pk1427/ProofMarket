@@ -44,3 +44,17 @@ export type InterventionResult = {
   status: 'pending' | 'completed' | 'failed'
   error?: string
 }
+
+export type TransactionKind = 'deposit' | 'withdraw' | 'pause' | 'resume'
+
+export type TransactionEntry = {
+  id: string
+  timestamp: string
+  kind: TransactionKind
+  label: string
+  detail?: string
+  amountUSDFC?: string
+  txHash?: string
+  status: 'pending' | 'completed' | 'failed'
+  error?: string
+}

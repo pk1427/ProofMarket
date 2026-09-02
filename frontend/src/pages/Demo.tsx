@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import type { AccountState, Dataset, DecisionResult, InterventionResult } from '../types'
+import type { AccountState, Dataset, DecisionResult, InterventionResult, TransactionEntry } from '../types'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001'
 
@@ -47,8 +47,9 @@ export default function Demo() {
   const [account, setAccount] = useState<AccountState | null>(null)
   const [datasets, setDatasets] = useState<Dataset[]>([])
   const [latestDecision, setLatestDecision] = useState<DecisionResult | null>(null)
-  const [decisions, setDecisions] = useState<DecisionResult[]>([])
-  const [interventions, setInterventions] = useState<InterventionResult[]>([])
+  const [, setDecisions] = useState<DecisionResult[]>([])
+  const [, setInterventionsList] = useState<InterventionResult[]>([])
+  const [transactions, setTransactions] = useState<TransactionEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [verifyingId, setVerifyingId] = useState<string | null>(null)
@@ -80,7 +81,7 @@ export default function Demo() {
     const res = await fetch(`${API_BASE}/api/interventions`)
     if (!res.ok) throw new Error('Failed to fetch interventions')
     const data = await res.json()
-    setInterventions(data)
+    setInterventionsList(data)
   }, [])
 
   const refreshAll = useCallback(async () => {
@@ -109,14 +110,114 @@ export default function Demo() {
     }
   }
 
-  const executeIntervention = async () => {
-    if (!latestDecision?.pausedDataset) return
+  const runDeposit = async (amountUSDFC: string) => {
+    const entry: TransactionEntry = {
+      id: `dep-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      kind: 'deposit',
+      label: `Top up ${amountUSDFC} USDFC`,
+      amountUSDFC,
+      status: 'pending',
+    }
+    setTransactions((prev) => [entry, ...prev])
     setLoading(true)
     setError(null)
     try {
-      const dataset = datasets.find((d) => d.name === latestDecision.pausedDataset)
-      if (!dataset) throw new Error('Paused dataset not found')
+      const amountWei = (BigInt(Math.floor(parseFloat(amountUSDFC) * 1e6)) * 10n ** 12n).toString()
+      const res = await fetch(`${API_BASE}/api/deposit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: amountWei }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Deposit failed' }))
+        throw new Error(err.error || 'Deposit failed')
+      }
+      const data = await res.json()
+      setTransactions((prev) => prev.map((t) => t.id === entry.id ? {
+        ...t,
+        status: 'completed',
+        txHash: data.depositTxHash,
+        detail: `Approve: ${data.approveTxHash?.slice(0, 10)}…`,
+      } : t))
+      await fetchAccount()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Deposit failed'
+      setTransactions((prev) => prev.map((t) => t.id === entry.id ? { ...t, status: 'failed', error: msg } : t))
+      setError(msg)
+    } finally {
+      setLoading(false)
+    }
+  }
 
+  const runWithdraw = async (mode: string) => {
+    const amountLabel = mode === 'all' ? 'Withdraw to critical' : 'Withdraw 100 USDFC'
+    const entry: TransactionEntry = {
+      id: `wd-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      kind: 'withdraw',
+      label: amountLabel,
+      status: 'pending',
+    }
+    setTransactions((prev) => [entry, ...prev])
+    setLoading(true)
+    setError(null)
+    try {
+      let body: Record<string, unknown> = {}
+      if (mode === 'all') {
+        const summary = await fetch(`${API_BASE}/api/account`).then((r) => r.json())
+        const targetBalance = 220_000_000_000_000_000_000n
+        const currentBalance = BigInt(summary.balance)
+        if (currentBalance > targetBalance) {
+          const amountWei = currentBalance - targetBalance
+          body = { amount: amountWei.toString() }
+        }
+      } else {
+        const amountWei = (BigInt(Math.floor(parseFloat(mode) * 1e6)) * 10n ** 12n).toString()
+        body = { amount: amountWei }
+      }
+      const res = await fetch(`${API_BASE}/api/withdraw`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Withdrawal failed' }))
+        throw new Error(err.error || 'Withdrawal failed')
+      }
+      const data = await res.json()
+      setTransactions((prev) => prev.map((t) => t.id === entry.id ? {
+        ...t,
+        status: 'completed',
+        txHash: data.txHash,
+        amountUSDFC: data.amountUSDFC?.toString(),
+      } : t))
+      await fetchAccount()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Withdrawal failed'
+      setTransactions((prev) => prev.map((t) => t.id === entry.id ? { ...t, status: 'failed', error: msg } : t))
+      setError(msg)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const executeIntervention = async () => {
+    if (!latestDecision?.pausedDataset) return
+    const dataset = datasets.find((d) => d.name === latestDecision.pausedDataset)
+    if (!dataset) return
+    const entry: TransactionEntry = {
+      id: `pause-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      kind: 'pause',
+      label: `Pause ${dataset.name}`,
+      detail: `Dataset #${dataset.datasetId}`,
+      status: 'pending',
+    }
+    setTransactions((prev) => [entry, ...prev])
+    setLoading(true)
+    setError(null)
+    try {
       const res = await fetch(`${API_BASE}/api/act`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -124,11 +225,19 @@ export default function Demo() {
       })
       if (!res.ok) throw new Error('Intervention failed')
       const result = await res.json()
-      setInterventions((prev) => [...prev, result])
+      setInterventionsList((prev) => [...prev, result])
+      setTransactions((prev) => prev.map((t) => t.id === entry.id ? {
+        ...t,
+        status: result.status,
+        txHash: result.txHash,
+        detail: `Dataset #${dataset.datasetId}${result.endEpoch ? ` · endEpoch ${result.endEpoch}` : ''}`,
+      } : t))
       setLatestDecision(null)
       await Promise.all([fetchDatasets(), fetchAccount(), fetchDecisions()])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Intervention failed')
+      const msg = err instanceof Error ? err.message : 'Intervention failed'
+      setTransactions((prev) => prev.map((t) => t.id === entry.id ? { ...t, status: 'failed', error: msg } : t))
+      setError(msg)
     } finally {
       setLoading(false)
     }
@@ -136,12 +245,20 @@ export default function Demo() {
 
   const resumeDataset = async () => {
     if (!latestDecision?.resumeCandidate) return
+    const dataset = datasets.find((d) => d.name === latestDecision.resumeCandidate)
+    if (!dataset) return
+    const entry: TransactionEntry = {
+      id: `resume-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      kind: 'resume',
+      label: `Resume ${dataset.name}`,
+      detail: `Dataset #${dataset.datasetId}`,
+      status: 'pending',
+    }
+    setTransactions((prev) => [entry, ...prev])
     setLoading(true)
     setError(null)
     try {
-      const dataset = datasets.find((d) => d.name === latestDecision.resumeCandidate)
-      if (!dataset) throw new Error('Resume candidate not found')
-
       const res = await fetch(`${API_BASE}/api/resume`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -149,11 +266,19 @@ export default function Demo() {
       })
       if (!res.ok) throw new Error('Resume failed')
       const result = await res.json()
-      setInterventions((prev) => [...prev, result])
+      setInterventionsList((prev) => [...prev, result])
+      setTransactions((prev) => prev.map((t) => t.id === entry.id ? {
+        ...t,
+        status: result.status,
+        txHash: result.txHash,
+        detail: `New dataset #${result.newDatasetId ?? '?'}`,
+      } : t))
       setLatestDecision(null)
       await Promise.all([fetchDatasets(), fetchAccount(), fetchDecisions()])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Resume failed')
+      const msg = err instanceof Error ? err.message : 'Resume failed'
+      setTransactions((prev) => prev.map((t) => t.id === entry.id ? { ...t, status: 'failed', error: msg } : t))
+      setError(msg)
     } finally {
       setLoading(false)
     }
@@ -218,35 +343,79 @@ export default function Demo() {
       {/* Demo Section */}
       <section id="demo" className="pt-32 pb-24 px-6 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-black via-gray-900 to-black" />
-        <div className="max-w-7xl mx-auto relative z-10">
+        <div className="max-w-6xl mx-auto relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 gradient-text">Live Demo</h2>
             <p className="text-gray-400 max-w-2xl mx-auto mb-8 text-lg">
               This dashboard is connected to a real Calibration testnet account.
               Every number you see is pulled from Filecoin Pay via the Synapse SDK.
             </p>
-            <button
-              onClick={runCheck}
-              disabled={loading}
-              className="group relative inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl overflow-hidden transition-all duration-300 shadow-lg shadow-blue-900/20 hover:shadow-xl hover:shadow-blue-900/40 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-blue-500 to-purple-500 transition-transform duration-500 group-hover:translate-x-0" />
-              <span className="relative flex items-center gap-2">
-                {loading ? (
-                  <>
-                    <span className="spinner" />
-                    Checking...
-                  </>
-                ) : (
-                  <>
-                    Check Now
-                    <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  </>
-                )}
-              </span>
-            </button>
+
+            {/* Action Bar */}
+            <div className="inline-flex flex-col items-center gap-3 mb-2 p-3 rounded-2xl glass border border-white/10">
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <button
+                  onClick={runCheck}
+                  disabled={loading}
+                  className="group relative inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl overflow-hidden transition-all duration-300 shadow-lg shadow-blue-900/20 hover:shadow-xl hover:shadow-blue-900/40 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-blue-500 to-purple-500 transition-transform duration-500 group-hover:translate-x-0" />
+                  <span className="relative flex items-center gap-2">
+                    {loading ? (
+                      <>
+                        <span className="spinner" />
+                        Checking...
+                      </>
+                    ) : (
+                      <>
+                        Check Now
+                        <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                      </>
+                    )}
+                  </span>
+                </button>
+                <span className="hidden md:inline-block w-px h-8 bg-white/10 mx-1" />
+                <button
+                  onClick={() => runDeposit('10')}
+                  disabled={loading}
+                  title="Deposit 10 USDFC into Filecoin Pay"
+                  className="inline-flex items-center gap-2 px-4 py-3 bg-emerald-900/30 border border-emerald-700/50 text-emerald-200 font-semibold rounded-xl hover:bg-emerald-900/50 hover:border-emerald-600 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m0-16l-4 4m4-4l4 4M4 20h16" />
+                  </svg>
+                  Top up 10 USDFC
+                </button>
+                <button
+                  onClick={() => runWithdraw('100')}
+                  disabled={loading}
+                  title="Withdraw 100 USDFC to wallet"
+                  className="inline-flex items-center gap-2 px-4 py-3 bg-orange-900/30 border border-orange-700/50 text-orange-200 font-semibold rounded-xl hover:bg-orange-900/50 hover:border-orange-600 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 20V4m0 16l-4-4m4 4l4-4M4 4h16" />
+                  </svg>
+                  Withdraw 100
+                </button>
+                <button
+                  onClick={() => runWithdraw('all')}
+                  disabled={loading}
+                  title="Withdraw down to the critical threshold"
+                  className="inline-flex items-center gap-2 px-4 py-3 bg-red-900/30 border border-red-700/50 text-red-200 font-semibold rounded-xl hover:bg-red-900/50 hover:border-red-600 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                  </svg>
+                  Withdraw to critical
+                </button>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Every action is a real onchain transaction on Calibration testnet.
+              </div>
+            </div>
           </div>
 
           {error && (
@@ -257,6 +426,58 @@ export default function Demo() {
               {error}
             </div>
           )}
+
+          {/* Recent Transactions */}
+          <div className="mb-8 card-glass">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Recent Transactions</h3>
+              <span className="text-xs text-gray-500 font-mono">{transactions.length} on this page</span>
+            </div>
+            {transactions.length === 0 ? (
+              <p className="text-sm text-gray-500">No transactions yet. Try "Top up 10 USDFC" or "Withdraw 100".</p>
+            ) : (
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {transactions.map((t) => {
+                  const kindColor =
+                    t.kind === 'deposit' ? 'text-emerald-300 bg-emerald-900/30 border-emerald-700/50' :
+                    t.kind === 'withdraw' ? 'text-orange-300 bg-orange-900/30 border-orange-700/50' :
+                    t.kind === 'pause' ? 'text-red-300 bg-red-900/30 border-red-700/50' :
+                    'text-blue-300 bg-blue-900/30 border-blue-700/50'
+                  return (
+                    <div key={t.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-2.5 bg-black/30 border border-white/5 rounded-lg">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className={`shrink-0 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded border ${kindColor}`}>
+                          {t.kind}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="text-sm text-white truncate">{t.label}</div>
+                          {t.detail && <div className="text-xs text-gray-500 truncate">{t.detail}</div>}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        {t.txHash && (
+                          <ExplorerLink href={`https://calibration.filfox.info/en/tx/${t.txHash}`} className="text-xs font-mono text-gray-400 hover:text-white">
+                            {t.txHash.slice(0, 6)}…{t.txHash.slice(-4)}
+                          </ExplorerLink>
+                        )}
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                          t.status === 'completed' ? 'text-emerald-300 bg-emerald-900/40' :
+                          t.status === 'pending' ? 'text-yellow-300 bg-yellow-900/40' :
+                          'text-red-300 bg-red-900/40'
+                        }`}>
+                          {t.status === 'pending' && <span className="spinner inline-block w-2 h-2 mr-1 align-middle" />}
+                          {t.status}
+                        </span>
+                        <span className="text-xs text-gray-500 font-mono w-20 text-right">
+                          {new Date(t.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
 
           {/* Top Status Bar */}
           {account && (
@@ -576,67 +797,6 @@ export default function Demo() {
               ) : (
                 <p className="text-gray-500">Run a check to generate an explanation.</p>
               )}
-            </div>
-
-            <div className="card-glass">
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Decision Log</h3>
-              <div className="space-y-3 max-h-64 overflow-y-auto">
-                {decisions.length === 0 && (
-                  <p className="text-gray-500 text-sm">No decisions recorded yet.</p>
-                )}
-                {[...decisions].reverse().map((d, idx) => (
-                  <div key={d.timestamp + idx} className="border-b border-gray-800 pb-3 last:border-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-xs font-semibold ${d.outcome === 'critical' ? 'text-red-400' : 'text-green-400'}`}>
-                        {d.outcome.toUpperCase()}
-                      </span>
-                      <span className="text-xs text-gray-500 font-mono">
-                        {new Date(d.timestamp).toLocaleTimeString()}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-400 line-clamp-2">{d.reason}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="card-glass">
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Intervention Log</h3>
-              <div className="space-y-3 max-h-64 overflow-y-auto">
-                {interventions.length === 0 && (
-                  <p className="text-gray-500 text-sm">No interventions executed yet.</p>
-                )}
-                {[...interventions].reverse().map((item, idx) => (
-                  <div key={item.timestamp + idx} className="border-b border-gray-800 pb-3 last:border-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-xs font-semibold ${
-                        item.status === 'completed' ? 'text-green-400' : item.status === 'failed' ? 'text-red-400' : 'text-yellow-400'
-                      }`}>
-                        {item.status.toUpperCase()}
-                      </span>
-                      <span className="text-xs text-gray-500 font-mono">
-                        {new Date(item.timestamp).toLocaleTimeString()}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      Paused <span className="text-red-300 font-medium">{item.datasetName}</span> #{item.datasetId}
-                    </div>
-                    {item.txHash && (
-                      <div className="text-xs text-gray-500 font-mono mt-1">
-                        <ExplorerLink href={`https://calibration.filfox.info/en/tx/${item.txHash}`} className="font-mono">
-                          tx: {item.txHash.slice(0, 10)}...{item.txHash.slice(-8)}
-                        </ExplorerLink>
-                      </div>
-                    )}
-                    {item.endEpoch && (
-                      <div className="text-xs text-gray-500">endEpoch: {item.endEpoch}</div>
-                    )}
-                    {item.error && (
-                      <div className="text-xs text-red-400 mt-1">{item.error}</div>
-                    )}
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </div>

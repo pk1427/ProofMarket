@@ -1,11 +1,14 @@
+import 'dotenv/config'
 import { fileURLToPath } from 'node:url'
 import express from 'express'
 import cors from 'cors'
-import { getAccountState, getBalance, getRunway } from './paymentsClient.ts'
+import { getAccountState, getBalance, getRunway, createPaymentsClient } from './paymentsClient.ts'
 import { runDecisionLoop, type Dataset, type DecisionResult } from './decisionLoop.ts'
 import { generateExplanation, generateFallbackExplanation, type ExplanationInput } from './explain.ts'
 import { pauseDataset, resumeDataset, type InterventionResult } from './intervention.ts'
 import * as SP from '@filoz/synapse-core/sp'
+import { Synapse, TOKENS } from '@filoz/synapse-sdk'
+import { calibration as calibrationChain } from '@filoz/synapse-core/chains'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 
@@ -258,6 +261,96 @@ app.get('/api/check', async (_req, res) => {
   } catch (err) {
     console.error('GET /api/check error:', err)
     res.status(500).json({ error: 'Decision check failed' })
+  }
+})
+
+app.post('/api/deposit', async (req, res) => {
+  try {
+    const amountWei = req.body?.amount ? BigInt(req.body.amount) : 10_000_000_000_000_000_000n
+    if (amountWei <= 0n) {
+      return res.status(400).json({ error: 'amount must be > 0 (wei)' })
+    }
+
+    const { synapse, client } = createPaymentsClient()
+    const before = await synapse.payments.walletBalance({ token: TOKENS.USDFC })
+    if (before < amountWei) {
+      return res.status(400).json({
+        error: `Insufficient wallet balance: have ${before.toString()} wei, need ${amountWei.toString()} wei`,
+      })
+    }
+
+    const warmStorageAddress = calibrationChain.contracts.fwss.address
+    const approveTx = await synapse.payments.approveService({
+      service: warmStorageAddress,
+      rateAllowance: amountWei,
+      lockupAllowance: amountWei,
+      maxLockupPeriod: 100_000n,
+      token: TOKENS.USDFC,
+    })
+    const depositTx = await synapse.payments.deposit({
+      amount: amountWei,
+      token: TOKENS.USDFC,
+    })
+
+    const after = await synapse.payments.accountSummary({ token: TOKENS.USDFC })
+
+    res.json({
+      action: 'deposit',
+      status: 'completed',
+      amount: amountWei.toString(),
+      amountUSDFC: Number(amountWei) / 1e18,
+      walletBalanceBefore: before.toString(),
+      walletBalanceAfterUSDFC: Number(before - amountWei) / 1e18,
+      paymentsBalanceAfter: after.availableFunds.toString(),
+      paymentsBalanceAfterUSDFC: Number(after.availableFunds) / 1e18,
+      runwayAfter: after.runwayInEpochs.toString(),
+      approveTxHash: typeof approveTx === 'string' ? approveTx : JSON.stringify(approveTx),
+      depositTxHash: typeof depositTx === 'string' ? depositTx : JSON.stringify(depositTx),
+    })
+  } catch (err) {
+    console.error('POST /api/deposit error:', err)
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Deposit failed' })
+  }
+})
+
+app.post('/api/withdraw', async (req, res) => {
+  try {
+    const amountWei = req.body?.amount ? BigInt(req.body.amount) : null
+    if (amountWei !== null && amountWei <= 0n) {
+      return res.status(400).json({ error: 'amount must be > 0 (wei)' })
+    }
+
+    const { synapse } = createPaymentsClient()
+    const before = await synapse.payments.accountSummary({ token: TOKENS.USDFC })
+
+    const amount = amountWei ?? before.availableFunds / 10n
+    if (amount > before.availableFunds) {
+      return res.status(400).json({
+        error: `Insufficient payments balance: have ${before.availableFunds.toString()} wei, requested ${amount.toString()} wei`,
+      })
+    }
+
+    const tx = await synapse.payments.withdraw({
+      amount,
+      token: TOKENS.USDFC,
+    })
+
+    const after = await synapse.payments.accountSummary({ token: TOKENS.USDFC })
+
+    res.json({
+      action: 'withdraw',
+      status: 'completed',
+      amount: amount.toString(),
+      amountUSDFC: Number(amount) / 1e18,
+      paymentsBalanceBefore: before.availableFunds.toString(),
+      paymentsBalanceAfter: after.availableFunds.toString(),
+      paymentsBalanceAfterUSDFC: Number(after.availableFunds) / 1e18,
+      runwayAfter: after.runwayInEpochs.toString(),
+      txHash: typeof tx === 'string' ? tx : JSON.stringify(tx),
+    })
+  } catch (err) {
+    console.error('POST /api/withdraw error:', err)
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Withdrawal failed' })
   }
 })
 
