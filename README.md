@@ -117,29 +117,43 @@ The rubric explicitly penalizes hardcoded or simulated balances and payments. He
 ### Setup
 
 ```bash
-# Backend
+# Backend — terminal 1
 cd backend
 cp .env.example .env
-# Fill in OPENROUTER_API_KEY and SYNAPSE_PRIVATE_KEY
+# Set SYNAPSE_PRIVATE_KEY. OPENROUTER_API_KEY is optional: a local fallback
+# explanation keeps the decision loop working if it is absent.
 npm install
 npm run dev
 
-# Frontend (separate terminal)
+# Frontend — terminal 2
 cd frontend
+cp .env.example .env
 npm install
 npm run dev
 ```
 
 Frontend runs at `http://localhost:5173`, backend at `http://localhost:3001`.
 
+For a public demo, set `VITE_API_BASE` to the deployed backend URL and add the
+matching frontend origin to `CORS_ORIGINS` in the backend environment. Restart
+Vite after changing any `VITE_` variable. Do not commit either `.env` file.
+
 ### Environment variables
 
 | Variable | Purpose | Default |
 |---|---|---|
-| `OPENROUTER_API_KEY` | Claude access via OpenRouter | — required |
+| `OPENROUTER_API_KEY` | Claude access via OpenRouter; a rules-based fallback is used when unset or unavailable | optional |
 | `SYNAPSE_PRIVATE_KEY` | Wallet key for Calibration testnet | — required |
+| `PORT` | Backend HTTP port | `3001` |
+| `CORS_ORIGINS` | Comma-separated frontend origins allowed to call the API | local Vite origins |
 | `TRIAGE_THRESHOLD_EPOCHS` | Runway threshold that triggers triage | `100000000` |
 | `RESUME_MARGIN_EPOCHS` | Safety margin required before resuming a paused dataset | `10000000` |
+
+Frontend variables:
+
+| Variable | Purpose | Default |
+|---|---|---|
+| `VITE_API_BASE` | Public URL of the ProofMarket backend | `http://localhost:3001` |
 
 ---
 
