@@ -16,6 +16,23 @@ ProofMarket is different. It holds two real datasets of different declared value
 
 ---
 
+## About
+
+**Builder:** Prasad Kapure
+**Challenge:** [FilecoinTLDR Builder Challenge — Cycle 4](https://docs.filecoin.io/)
+**Submission type:** Live, working web app + open-source repo
+**Network:** Filecoin Calibration testnet (chain ID `314159`)
+**Stack:** TypeScript, React, Vite, Express, viem, Synapse SDK, Claude (via OpenRouter), wagmi, RainbowKit
+**Code:** [github.com/pk1427/ProofMarket](https://github.com/pk1427/ProofMarket)
+**Live demo:** [proofmarket-1.vercel.app](https://proofmarket-1.vercel.app)
+**Backend:** [proofmarket-1.onrender.com](https://proofmarket-1.onrender.com)
+
+ProofMarket is built as a single, working submission — every button on the demo page is wired to a real onchain transaction (or a real read from Filecoin Pay), and every number on screen is sourced from the Synapse SDK at request time. There is no mock layer, no faked balance, no simulated lockup rate.
+
+The whole thing is small enough to read in one sitting: ~1,500 lines of TypeScript across a 5-file backend and a 10-file frontend, plus a 6-file dataset/decision/intervention history that lives in `data/`.
+
+---
+
 ## Why Two Datasets, Not One
 
 A single-dataset "keep it alive or don't" loop isn't a real decision — there's nothing to choose *against*, so the one dataset survives by default. Two datasets, each with a declared priority, turns the same amount of engineering into a genuine trade-off: protect A, pause B, and justify the call. Everything beyond this — a third dataset, a demand simulator, a full reallocation market — is upside, not required to tell the story.
@@ -212,6 +229,53 @@ In wallet mode, the dashboard also exposes a **Create Demo Datasets** action tha
 | Working demo quality | 25% | Narrow, tested scope: one decision loop, one real intervention type (pause/resume), calibrated and rehearsed against real onchain timing before recording. |
 | Meaningful use of Filecoin | 20% | Real Synapse SDK storage operations, real `PaymentsService`/`accountSummary()` reads, real per-dataset rail rate queries, and a real pause/resume transaction verified independently via the provider. |
 | Clarity + showcase | 15% | Explicit real-vs-simulated data lineage on the Architecture page, a single focused LLM explanation per decision, and this document. |
+
+---
+
+## AI Build Log
+
+This project was built end-to-end with AI pair-programming as a primary collaborator. Below is the honest record of what the human did, what the AI did, and where the lines blur.
+
+**Repo built in:** one working session across roughly three focused days of iteration.
+
+**Model used:** Claude (Sonnet 4 / Opus 4.x) via Kilo CLI, with code review checkpoints after every meaningful change.
+
+**What AI was used for:**
+- **Boilerplate generation** — Express server, CORS config, Vite + React + TS scaffolding, Tailwind setup, type definitions for the API surface.
+- **Synapse SDK plumbing** — the wallet vs. server signer paths, the public-client read pattern, the in-browser dataset creation flow.
+- **State management** — React state shape, useEffect dependency debugging, race conditions between the wagmi `useWalletClient()` hook and the Synapse read.
+- **Debugging** — catching the `2^64` empty-account display bug, the wallet-vs-demo-account read divergence, the `waitForTransactionReceipt` UX regression that was making the UI feel stuck.
+- **Documentation** — most of this README, the inline code comments, the explain-fallback rules.
+
+**What the human did:**
+- **The decision logic itself** — `runDecisionLoop` is the core intellectual contribution: which datasets to compare, what threshold means, the four resume-outcome cases (safe / available / insufficient / already-active), the protection rule when two are active.
+- **Real onchain testing** — every transaction shown in the demo was actually sent on Calibration: the 2,000 USDFC drip, the 10 USDFC top-up (`0xb79b…4442`), the two PDP dataset creations (`#33535`, `#33536`), and the pause (`0xaef5…ee5a`). All are independently verifiable on Filfox.
+- **Honest evaluation of the AI's suggestions** — multiple AI-generated snippets were rejected or rewritten on inspection (e.g. an over-engineered wallet-client fallback that didn't work with the user's MetaMask config, a simulated "demo mode" that hid the real account state, a `formatUSDFC` regex that stripped leading zeros incorrectly).
+- **The product framing** — choosing "two datasets, different declared values" as the smallest unit of a real trade-off; deciding the demo account would be a *visible* address with a public tx history rather than a hidden test fixture; keeping the LLM explanation to one focused paragraph rather than a wall of AI text.
+
+**Where the AI helped most:** converting a one-paragraph mental model ("watch the runway, pick which dataset to keep") into a working system with a real backend, a real frontend, real onchain integration, and a clean dev story — without losing the original decision rule in translation.
+
+**Where the AI's help had to be corrected:** the wallet-read path went through three wrong implementations before the working public-RPC + connected-address approach. The deposit/withdraw UX went through a "wait for receipt" version that made the UI feel frozen, and a "fake completion" version that was misleading. Both were caught and replaced with the fire-and-forget pattern that's in the final code.
+
+---
+
+## Submission Checklist
+
+Use this as a verification list for judges (and as a sanity check for the build).
+
+- [x] **Live, working web app** at [proofmarket-1.vercel.app](https://proofmarket-1.vercel.app)
+- [x] **Source repo** at [github.com/pk1427/ProofMarket](https://github.com/pk1427/ProofMarket)
+- [x] **Two real datasets** of different declared value (9 vs 3), both visible in the demo and onchain
+- [x] **Real decision logic** — threshold-based triage with 5 distinct outcomes (`healthy` / `critical` / `resume_safe` / `resume_available` / `resume_insufficient`)
+- [x] **Real onchain reads** — `accountSummary`, per-dataset rail rate, `getPdpDataSet`, `terminateServiceSync`, `createDataSetAndAddPieces` — none cached, none mocked
+- [x] **Real onchain actions** — pause/resume transactions confirmed on Calibration and viewable on Filfox
+- [x] **LLM explanation** — Claude via OpenRouter, with a rules-based fallback so the agent's behavior never depends on an external API
+- [x] **Wallet mode** — connect MetaMask, sign with your own account, run the same triage end-to-end
+- [x] **Real-vs-simulated disclosure** — explicit table in this README, no hidden assumptions
+- [x] **Known limitations** — listed honestly in the section above
+- [x] **AI build log** — this section
+- [x] **README** — setup, architecture, decision rules, demo flow, judging-criterion mapping
+- [x] **End-to-end demo path reproducible** — faucet → deposit → create datasets → check → pause → check → resume
 
 ---
 
