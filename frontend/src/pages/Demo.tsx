@@ -20,15 +20,16 @@ function formatWei(wei: string, decimals = 18) {
 
 function SimulatedBadge() {
   return (
-    <span className="ml-2 px-1.5 py-0.5 bg-yellow-900/60 text-yellow-300 text-[10px] font-semibold rounded border border-yellow-700/60 uppercase tracking-wider">
-      Simulated
-    </span>
+    <span className="badge badge-warning ml-1.5">Simulated</span>
   )
 }
 
 function RealBadge() {
   return (
-    <span className="ml-2 px-1.5 py-0.5 bg-emerald-900/60 text-emerald-300 text-[10px] font-semibold rounded border border-emerald-700/60 uppercase tracking-wider">
+    <span className="badge badge-healthy ml-1.5">
+      <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+      </svg>
       Onchain
     </span>
   )
@@ -40,7 +41,7 @@ function ExplorerLink({ href, children, className }: { href: string; children: R
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={`inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 transition ${className || ''}`}
+      className={`inline-flex items-center gap-1 text-brand-700 hover:text-brand-500 transition font-mono text-xs ${className || ''}`}
     >
       {children}
       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -48,6 +49,11 @@ function ExplorerLink({ href, children, className }: { href: string; children: R
       </svg>
     </a>
   )
+}
+
+function shortenHash(hash: string, head = 6, tail = 4) {
+  if (hash.length <= head + tail) return hash
+  return `${hash.slice(0, head)}…${hash.slice(-tail)}`
 }
 
 export default function Demo() {
@@ -662,41 +668,39 @@ export default function Demo() {
   const progress = remainingEpochs > 0 ? Math.min(100, Math.max(0, (remainingEpochs / threshold) * 100)) : 0
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Navigation */}
-      <Navbar active="demo" />
+    <div className="min-h-screen canvas">
+      <Navbar />
 
-      {/* Demo Section */}
-      <section id="demo" className="pt-32 pb-24 px-6 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-black via-gray-900 to-black" />
-        <div className="max-w-6xl mx-auto relative z-10">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 gradient-text">Live Demo</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto mb-8 text-lg">
+      <section className="pt-24 pb-16 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-8">
+            <p className="text-xs font-semibold uppercase tracking-wider text-brand-700 mb-3">Live Demo</p>
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-ink mb-3">Live Demo</h1>
+            <p className="text-ink-2 max-w-2xl mx-auto text-base">
               {useWallet
-                ? <>Connected to your wallet <span className="font-mono text-gray-300">{address?.slice(0, 6)}…{address?.slice(-4)}</span> on Calibration testnet. All reads and writes are signed by your wallet.</>
+                ? <>Connected to your wallet <span className="font-mono text-ink">{address?.slice(0, 6)}…{address?.slice(-4)}</span> on Calibration testnet. All reads and writes are signed by your wallet.</>
                 : <>This dashboard is connected to a real Calibration testnet account. Every number you see is pulled from Filecoin Pay via the Synapse SDK. Connect your wallet to use your own account.</>
               }
             </p>
 
             {isConnected && (
-              <div className={`mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium ${
+              <div className={`mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium ${
                 useWallet
-                  ? 'bg-emerald-900/30 border border-emerald-700/50 text-emerald-200'
-                  : 'bg-yellow-900/30 border border-yellow-700/50 text-yellow-200'
+                  ? 'status-pill status-healthy'
+                  : 'status-pill status-warning'
               }`}>
                 {useWallet ? (
                   <>
-                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    Connected: <span className="font-mono">{address?.slice(0, 6)}…{address?.slice(-4)}</span>
-                    <span className="text-emerald-400/70">· actions sign with your wallet</span>
+                    <span className="pulse-dot" />
+                    <span>Connected: <span className="font-mono">{address?.slice(0, 6)}…{address?.slice(-4)}</span></span>
+                    <span className="text-ink-3">· actions sign with your wallet</span>
                   </>
                 ) : (
                   <>
                     <span>Wrong network — switch to Calibration testnet to interact with your own account</span>
                     <button
                       onClick={() => switchChain({ chainId: calibrationChain.id })}
-                      className="ml-2 underline hover:no-underline"
+                      className="ml-2 underline hover:no-underline font-semibold"
                     >
                       Switch
                     </button>
@@ -706,24 +710,25 @@ export default function Demo() {
             )}
 
             {/* Action Bar */}
-            <div className="inline-flex flex-col items-stretch gap-4 mb-2 p-5 rounded-2xl glass border border-white/10 max-w-3xl">
+            <div className="mt-6 inline-flex flex-col items-stretch gap-4 p-5 rounded-2xl card max-w-3xl">
               {/* Row 1: Check Now + Create Datasets */}
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <button
                   onClick={runCheck}
                   disabled={loading}
-                  className="group relative inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl overflow-hidden transition-all duration-300 shadow-lg shadow-blue-900/20 hover:shadow-xl hover:shadow-blue-900/40 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="btn-primary group"
                 >
-                  <span className="relative flex items-center gap-2">
-                    {loading ? <><span className="spinner" />Checking...</> : <>Check Now<svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg></>}
-                  </span>
+                  {loading ? <><span className="spinner" /> Checking…</> : <>
+                    Check Now
+                    <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                  </>}
                 </button>
                 {useWallet && (
                   <button
                     onClick={runSetupDemo}
                     disabled={loading || datasets.length > 0}
                     title="Upload 2 demo datasets onchain from this wallet"
-                    className="inline-flex items-center gap-2 px-4 py-3 bg-blue-900/30 border border-blue-700/50 text-blue-200 font-semibold rounded-xl hover:bg-blue-900/50 hover:border-blue-600 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="btn-secondary"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -735,20 +740,21 @@ export default function Demo() {
 
               {/* Row 2: Deposit with input */}
               <div className="flex flex-wrap items-center gap-2 justify-center">
-                <label className="text-xs text-gray-400 uppercase tracking-wider">Deposit</label>
+                <label className="label mb-0">Deposit</label>
                 <input
                   type="number"
                   step="0.1"
                   min="0"
                   value={depositAmount}
                   onChange={(e) => setDepositAmount(e.target.value)}
-                  className="w-24 px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-emerald-500/50"
+                  className="input w-24 font-mono"
                   placeholder="USDFC"
+                  aria-label="Deposit amount in USDFC"
                 />
                 <button
                   onClick={() => runDeposit(depositAmount)}
                   disabled={loading || !depositAmount || Number(depositAmount) <= 0}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-900/30 border border-emerald-700/50 text-emerald-200 font-semibold rounded-lg hover:bg-emerald-900/50 hover:border-emerald-600 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="btn-success"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m0-16l-4 4m4-4l4 4M4 20h16" />
@@ -759,20 +765,21 @@ export default function Demo() {
 
               {/* Row 3: Withdraw (input + button + critical) */}
               <div className="flex flex-wrap items-center gap-2 justify-center">
-                <label className="text-xs text-gray-400 uppercase tracking-wider">Withdraw</label>
+                <label className="label mb-0">Withdraw</label>
                 <input
                   type="number"
                   step="0.1"
                   min="0"
                   value={withdrawAmount}
                   onChange={(e) => setWithdrawAmount(e.target.value)}
-                  className="w-24 px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-orange-500/50"
+                  className="input w-24 font-mono"
                   placeholder="USDFC"
+                  aria-label="Withdraw amount in USDFC"
                 />
                 <button
                   onClick={() => runWithdraw(withdrawAmount)}
                   disabled={loading || !withdrawAmount || Number(withdrawAmount) <= 0}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-orange-900/30 border border-orange-700/50 text-orange-200 font-semibold rounded-lg hover:bg-orange-900/50 hover:border-orange-600 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="btn-warning"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 20V4m0 16l-4-4m4 4l4-4M4 4h16" />
@@ -783,7 +790,7 @@ export default function Demo() {
                   onClick={() => runWithdraw('all')}
                   disabled={loading}
                   title="Withdraw everything above the critical threshold"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-900/40 border border-red-700/50 text-red-200 font-semibold rounded-lg hover:bg-red-900/60 hover:border-red-600 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="btn-danger"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
@@ -792,16 +799,16 @@ export default function Demo() {
                 </button>
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-gray-500 justify-center">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <div className="flex items-center gap-2 text-xs text-ink-3 justify-center">
+                <span className="pulse-dot text-emerald-600" />
                 Every action is a real onchain transaction on Calibration testnet.
               </div>
             </div>
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-900/40 border border-red-700/50 rounded-xl text-red-200 flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="mb-6 p-4 surface-danger rounded-xl text-danger-fg flex items-center gap-2 text-sm">
+              <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               {error}
@@ -809,47 +816,47 @@ export default function Demo() {
           )}
 
           {/* Recent Transactions */}
-          <div className="mb-8 card-glass">
+          <div className="mb-8 card p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Recent Transactions</h3>
-              <span className="text-xs text-gray-500 font-mono">{transactions.length} on this page</span>
+              <h3 className="text-xs font-semibold text-ink-3 uppercase tracking-wider">Recent Transactions</h3>
+              <span className="text-xs text-ink-3 font-mono">{transactions.length} on this page</span>
             </div>
             {transactions.length === 0 ? (
-              <p className="text-sm text-gray-500">No transactions yet. Try "Top up 10 USDFC" or "Withdraw 100".</p>
+              <p className="text-sm text-ink-3">No transactions yet. Try "Top up 10 USDFC" or "Withdraw 100".</p>
             ) : (
               <div className="space-y-2 max-h-72 overflow-y-auto">
                 {transactions.map((t) => {
-                  const kindColor =
-                    t.kind === 'deposit' ? 'text-emerald-300 bg-emerald-900/30 border-emerald-700/50' :
-                    t.kind === 'withdraw' ? 'text-orange-300 bg-orange-900/30 border-orange-700/50' :
-                    t.kind === 'pause' ? 'text-red-300 bg-red-900/30 border-red-700/50' :
-                    'text-blue-300 bg-blue-900/30 border-blue-700/50'
+                  const kindClass =
+                    t.kind === 'deposit' ? 'badge-healthy' :
+                    t.kind === 'withdraw' ? 'badge-warning' :
+                    t.kind === 'pause' ? 'badge-danger' :
+                    'badge-info'
                   return (
-                    <div key={t.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-2.5 bg-black/30 border border-white/5 rounded-lg">
+                    <div key={t.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-2.5 surface-info border-line rounded-lg">
                       <div className="flex items-center gap-3 min-w-0">
-                        <span className={`shrink-0 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded border ${kindColor}`}>
+                        <span className={`shrink-0 badge ${kindClass}`}>
                           {t.kind}
                         </span>
                         <div className="min-w-0">
-                          <div className="text-sm text-white truncate">{t.label}</div>
-                          {t.detail && <div className="text-xs text-gray-500 truncate">{t.detail}</div>}
+                          <div className="text-sm text-ink truncate">{t.label}</div>
+                          {t.detail && <div className="text-xs text-ink-3 truncate">{t.detail}</div>}
                         </div>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
                         {t.txHash && (
-                          <ExplorerLink href={`https://calibration.filfox.info/en/tx/${t.txHash}`} className="text-xs font-mono text-gray-400 hover:text-white">
-                            {t.txHash.slice(0, 6)}…{t.txHash.slice(-4)}
+                          <ExplorerLink href={`https://calibration.filfox.info/en/tx/${t.txHash}`}>
+                            {shortenHash(t.txHash)}
                           </ExplorerLink>
                         )}
-                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
-                          t.status === 'completed' ? 'text-emerald-300 bg-emerald-900/40' :
-                          t.status === 'pending' ? 'text-yellow-300 bg-yellow-900/40' :
-                          'text-red-300 bg-red-900/40'
+                        <span className={`badge ${
+                          t.status === 'completed' ? 'badge-completed' :
+                          t.status === 'pending' ? 'badge-pending' :
+                          'badge-failed'
                         }`}>
-                          {t.status === 'pending' && <span className="spinner inline-block w-2 h-2 mr-1 align-middle" />}
+                          {t.status === 'pending' && <span className="spinner w-2 h-2" />}
                           {t.status}
                         </span>
-                        <span className="text-xs text-gray-500 font-mono w-20 text-right">
+                        <span className="text-xs text-ink-3 font-mono w-20 text-right">
                           {new Date(t.timestamp).toLocaleTimeString()}
                         </span>
                       </div>
@@ -862,27 +869,25 @@ export default function Demo() {
 
           {/* Top Status Bar */}
           {account && (
-            <div className={`mb-8 p-6 rounded-2xl border flex flex-col md:flex-row items-center justify-between gap-4 ${
-              isHealthy
-                ? 'glass border-green-700/50'
-                : 'glass border-red-700/50'
+            <div className={`mb-8 p-5 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-5 ${
+              isHealthy ? 'surface-healthy' : 'surface-danger'
             }`}>
               <div className="flex items-center gap-4">
-                <div className={`relative flex h-4 w-4`}>
+                <div className="relative flex h-3 w-3">
                   {isHealthy && (
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                    <span className="pulse-dot text-emerald-600" />
                   )}
-                  <span className={`relative inline-flex rounded-full h-4 w-4 ${
-                    isHealthy ? 'bg-green-500' : 'bg-red-500'
-                  }`} />
+                  {!isHealthy && (
+                    <span className="pulse-dot text-red-600" />
+                  )}
                 </div>
                 <div>
-                  <div className={`text-2xl font-bold ${
-                    isHealthy ? 'text-green-300' : 'text-red-300'
+                  <div className={`text-2xl font-bold tracking-tight ${
+                    isHealthy ? 'text-success-fg' : 'text-danger-fg'
                   }`}>
                     {isHealthy ? 'HEALTHY' : 'CRITICAL'}
                   </div>
-                  <div className="text-sm text-gray-400">
+                  <div className="text-sm text-ink-2">
                     {noStorage
                       ? 'No active storage on this account'
                       : remainingEpochs > 0
@@ -891,133 +896,139 @@ export default function Demo() {
                   </div>
                 </div>
               </div>
-               
-              <div className="flex-1 max-w-md">
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
+
+              <div className="flex-1 max-w-md w-full">
+                <div className="flex justify-between text-xs text-ink-3 mb-1.5">
                   <span>Runway remaining</span>
-                  <span>{progress.toFixed(0)}%</span>
+                  <span className="font-mono">{progress.toFixed(0)}%</span>
                 </div>
-                <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                <div className="progress-track">
                   <div
-                    className={`h-full rounded-full transition-all duration-1000 ${
-                      isHealthy ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-gradient-to-r from-red-500 to-orange-500'
-                    }`}
+                    className={`progress-fill ${isHealthy ? 'progress-healthy' : 'progress-danger'}`}
                     style={{ width: `${progress}%` }}
                   />
                 </div>
               </div>
 
               <div className="text-right">
-                <div className="text-xs text-gray-500">Triage Threshold</div>
-                <div className="text-lg font-mono text-white">{threshold.toLocaleString()} epochs</div>
+                <div className="text-xs text-ink-3">Triage Threshold</div>
+                <div className="text-lg font-mono font-semibold text-ink">{threshold.toLocaleString()} epochs</div>
               </div>
             </div>
           )}
 
           {/* Main Dashboard Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
             {/* Account State */}
-            <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="card-glass">
-                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-6">Account State</h3>
+            <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="card p-6">
+                <h3 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-6">Account State</h3>
                 {account ? (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400">USDFC Balance</span>
-                      <span className="text-2xl font-mono text-white">{formatWei(account.balance)} <span className="text-sm text-gray-500">USDFC</span></span>
+                      <span className="text-ink-3 text-sm">USDFC Balance</span>
+                      <span className="text-xl font-mono font-semibold text-ink">{formatWei(account.balance)} <span className="text-xs text-ink-3 font-normal">USDFC</span></span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Runway</span>
-                      <span className="text-2xl font-mono text-white">
-                        {isUncapped ? <span className="text-gray-500">∞</span> : `${Number(account.runway).toLocaleString()} `}<span className="text-sm text-gray-500">epochs</span>
+                      <span className="text-ink-3 text-sm">Runway</span>
+                      <span className="text-xl font-mono font-semibold text-ink">
+                        {isUncapped ? <span className="text-ink-3">∞</span> : `${Number(account.runway).toLocaleString()} `}<span className="text-xs text-ink-3 font-normal">epochs</span>
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Lockup Rate</span>
-                      <span className="text-2xl font-mono text-white">{formatWei(account.lockupRate)} <span className="text-sm text-gray-500">/epoch</span></span>
+                      <span className="text-ink-3 text-sm">Lockup Rate</span>
+                      <span className="text-xl font-mono font-semibold text-ink">{formatWei(account.lockupRate)} <span className="text-xs text-ink-3 font-normal">/epoch</span></span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Current Epoch</span>
-                      <span className="text-2xl font-mono text-white">{Number(account.currentEpoch).toLocaleString()}</span>
+                      <span className="text-ink-3 text-sm">Current Epoch</span>
+                      <span className="text-xl font-mono font-semibold text-ink">{Number(account.currentEpoch).toLocaleString()}</span>
                     </div>
-                    <div className="pt-4 border-t border-gray-800">
-                      <div className="text-xs text-gray-500 mb-2">Chain Verification</div>
-                      <div className="bg-black/40 rounded-lg p-3 font-mono text-xs text-gray-300 space-y-1">
+                    <div className="pt-4 border-t border-line">
+                      <div className="text-xs text-ink-3 mb-2">Chain Verification</div>
+                      <div className="rounded-lg surface-info p-3 font-mono text-xs text-ink-2 space-y-1">
                         <div>Balance: {formatWei(account.balance)} USDFC | Epoch: {account.currentEpoch}</div>
                         <div>Runway: {isUncapped ? '∞' : Number(account.runway).toLocaleString()} epochs | Lockup: {formatWei(account.lockupRate)}/epoch</div>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-gray-500">Loading...</div>
+                  <div className="space-y-3">
+                    <div className="skeleton h-4 w-full" />
+                    <div className="skeleton h-4 w-3/4" />
+                    <div className="skeleton h-4 w-2/3" />
+                  </div>
                 )}
               </div>
 
-              <div className="card-glass">
-                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-6">Portfolio</h3>
+              <div className="card p-6">
+                <h3 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-6">Portfolio</h3>
                 {account ? (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Total Cost / Epoch</span>
-                      <span className="text-2xl font-mono text-white">{formatWei(account.lockupRate)} <span className="text-sm text-gray-500">USDFC</span></span>
+                      <span className="text-ink-3 text-sm">Total Cost / Epoch</span>
+                      <span className="text-xl font-mono font-semibold text-ink">{formatWei(account.lockupRate)} <span className="text-xs text-ink-3 font-normal">USDFC</span></span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Remaining Epochs</span>
-                      <span className="text-2xl font-mono text-white">
-                        {isUncapped ? <span className="text-gray-500">∞</span> : remainingEpochs > 0 ? remainingEpochs.toLocaleString() : '0'}
+                      <span className="text-ink-3 text-sm">Remaining Epochs</span>
+                      <span className="text-xl font-mono font-semibold text-ink">
+                        {isUncapped ? <span className="text-ink-3">∞</span> : remainingEpochs > 0 ? remainingEpochs.toLocaleString() : '0'}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Threshold</span>
-                      <span className="text-2xl font-mono text-white">{threshold.toLocaleString()}</span>
+                      <span className="text-ink-3 text-sm">Threshold</span>
+                      <span className="text-xl font-mono font-semibold text-ink">{threshold.toLocaleString()}</span>
                     </div>
-                    <div className="pt-4 border-t border-gray-800">
-                      <div className="text-xs text-gray-500 mb-2">Status</div>
-                      <div className={`text-lg font-semibold ${isHealthy ? 'text-green-400' : 'text-red-400'}`}>
+                    <div className="pt-4 border-t border-line">
+                      <div className="text-xs text-ink-3 mb-2">Status</div>
+                      <div className={`text-lg font-semibold ${isHealthy ? 'text-success-fg' : 'text-danger-fg'}`}>
                         {isHealthy ? 'HEALTHY' : 'CRITICAL'}
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-gray-500">Loading...</div>
+                  <div className="space-y-3">
+                    <div className="skeleton h-4 w-full" />
+                    <div className="skeleton h-4 w-3/4" />
+                    <div className="skeleton h-4 w-2/3" />
+                  </div>
                 )}
               </div>
             </div>
 
             {/* Latest Decision */}
-            <div className="card-glass">
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-6">Latest Decision</h3>
+            <div className="card p-6">
+              <h3 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-6">Latest Decision</h3>
               {latestDecision ? (
                 <div className="space-y-4">
                   <div>
-                    <div className="text-xs text-gray-500 mb-1">Outcome</div>
-                    <div className={`text-3xl font-bold ${
-                      latestDecision.outcome === 'critical' ? 'text-red-400' :
-                      latestDecision.outcome === 'resume_insufficient' ? 'text-yellow-400' :
-                      'text-green-400'
+                    <div className="text-xs text-ink-3 mb-1">Outcome</div>
+                    <div className={`text-2xl font-bold ${
+                      latestDecision.outcome === 'critical' ? 'text-danger-fg' :
+                      latestDecision.outcome === 'resume_insufficient' ? 'text-warning-fg' :
+                      'text-success-fg'
                     }`}>
                       {latestDecision.outcome.toUpperCase()}
                     </div>
                   </div>
-                   
+
                   {latestDecision.protectedDataset && (
-                    <div className="p-3 bg-green-900/20 border border-green-800/50 rounded-xl">
-                      <div className="text-xs text-green-400 mb-1">Protected</div>
-                      <div className="text-sm font-medium text-green-300">{latestDecision.protectedDataset}</div>
+                    <div className="p-3 surface-healthy rounded-lg">
+                      <div className="text-xs text-success-fg mb-1 font-semibold">Protected</div>
+                      <div className="text-sm font-medium text-ink">{latestDecision.protectedDataset}</div>
                     </div>
                   )}
-                   
+
                   {latestDecision.pausedDataset && (
-                    <div className="p-3 bg-red-900/20 border border-red-800/50 rounded-xl">
-                      <div className="text-xs text-red-400 mb-1">Paused / Dropped</div>
-                      <div className="text-sm font-medium text-red-300">{latestDecision.pausedDataset}</div>
+                    <div className="p-3 surface-danger rounded-lg">
+                      <div className="text-xs text-danger-fg mb-1 font-semibold">Paused / Dropped</div>
+                      <div className="text-sm font-medium text-ink">{latestDecision.pausedDataset}</div>
                     </div>
                   )}
 
                   {latestDecision.resumeCandidate && (
-                    <div className="p-3 bg-blue-900/20 border border-blue-800/50 rounded-xl">
-                      <div className="text-xs text-blue-400 mb-1">Resume Candidate</div>
-                      <div className="text-sm font-medium text-blue-300">{latestDecision.resumeCandidate}</div>
+                    <div className="p-3 surface-info rounded-lg">
+                      <div className="text-xs text-info-fg mb-1 font-semibold">Resume Candidate</div>
+                      <div className="text-sm font-medium text-ink">{latestDecision.resumeCandidate}</div>
                     </div>
                   )}
 
@@ -1027,9 +1038,9 @@ export default function Demo() {
                     )
                     if (alreadyPaused) {
                       return (
-                        <div className="p-3 bg-yellow-900/20 border border-yellow-800/50 rounded-xl">
-                          <div className="text-xs text-yellow-400 font-medium">Intervention already executed</div>
-                          <p className="text-xs text-gray-500 mt-1">
+                        <div className="p-3 surface-warning rounded-lg">
+                          <div className="text-xs text-warning-fg font-semibold">Intervention already executed</div>
+                          <p className="text-xs text-ink-3 mt-1">
                             {latestDecision.pausedDataset} has been paused on-chain.
                           </p>
                         </div>
@@ -1039,9 +1050,9 @@ export default function Demo() {
                       <button
                         onClick={executeIntervention}
                         disabled={loading}
-                        className="w-full btn-danger"
+                        className="btn-danger"
                       >
-                        {loading ? 'Pausing...' : `Pause ${latestDecision.pausedDataset}`}
+                        {loading ? <><span className="spinner" /> Pausing…</> : `Pause ${latestDecision.pausedDataset}`}
                       </button>
                     )
                   })()}
@@ -1052,9 +1063,9 @@ export default function Demo() {
                     )
                     if (!isPaused) {
                       return (
-                        <div className="p-3 bg-green-900/20 border border-green-800/50 rounded-xl">
-                          <div className="text-xs text-green-400 font-medium">Already active</div>
-                          <p className="text-xs text-gray-500 mt-1">
+                        <div className="p-3 surface-healthy rounded-lg">
+                          <div className="text-xs text-success-fg font-semibold">Already active</div>
+                          <p className="text-xs text-ink-3 mt-1">
                             {latestDecision.resumeCandidate} is already active.
                           </p>
                         </div>
@@ -1064,114 +1075,118 @@ export default function Demo() {
                       <button
                         onClick={resumeDataset}
                         disabled={loading}
-                        className="w-full btn-success"
+                        className="btn-success"
                       >
-                        {loading ? 'Resuming...' : `Resume ${latestDecision.resumeCandidate}`}
+                        {loading ? <><span className="spinner" /> Resuming…</> : `Resume ${latestDecision.resumeCandidate}`}
                       </button>
                     )
                   })()}
 
                   {latestDecision.outcome === 'resume_insufficient' && latestDecision.resumeCandidate && (
-                    <div className="p-3 bg-yellow-900/20 border border-yellow-800/50 rounded-xl">
-                      <div className="text-xs text-yellow-400 font-medium">Resume not safe yet</div>
-                      <p className="text-xs text-gray-500 mt-1">
+                    <div className="p-3 surface-warning rounded-lg">
+                      <div className="text-xs text-warning-fg font-semibold">Resume not safe yet</div>
+                      <p className="text-xs text-ink-3 mt-1">
                         Runway has recovered but resuming {latestDecision.resumeCandidate} would still put the account below threshold.
                       </p>
                     </div>
                   )}
 
                   <div>
-                    <div className="text-xs text-gray-500 mb-1">Reason</div>
-                    <div className="text-sm text-gray-300 leading-relaxed">{latestDecision.reason}</div>
+                    <div className="text-xs text-ink-3 mb-1">Reason</div>
+                    <div className="text-sm text-ink-2 leading-relaxed">{latestDecision.reason}</div>
                   </div>
 
-                  <div className="pt-3 border-t border-gray-800">
-                    <div className="text-xs text-gray-500">Checked At</div>
-                    <div className="text-sm text-gray-300 font-mono">
+                  <div className="pt-3 border-t border-line">
+                    <div className="text-xs text-ink-3">Checked At</div>
+                    <div className="text-sm text-ink-2 font-mono">
                       {new Date(latestDecision.timestamp).toLocaleString()}
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="text-gray-500">No checks yet. Click "Check Now".</div>
+                <div className="text-center py-8">
+                  <div className="mx-auto w-10 h-10 rounded-full bg-slate-100 grid place-items-center mb-3">
+                    <svg className="w-5 h-5 text-ink-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <p className="text-sm text-ink-2 font-medium">No checks yet</p>
+                  <p className="text-xs text-ink-3 mt-1">Click "Check Now" to begin triage.</p>
+                </div>
               )}
             </div>
           </div>
 
           {/* Dataset Cards */}
           {useWallet && datasets.length === 0 ? (
-            <div className="card-glass mb-8 text-center py-12">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-900/30 border border-blue-700/50 mb-4">
-                <svg className="w-6 h-6 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="card p-10 mb-8 text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-brand-50 mb-4">
+                <svg className="w-6 h-6 text-brand-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">No datasets on this account</h3>
-              <p className="text-sm text-gray-400 max-w-md mx-auto">
+              <h3 className="text-lg font-semibold text-ink mb-2">No datasets on this account</h3>
+              <p className="text-sm text-ink-2 max-w-md mx-auto">
                 {noStorage
                   ? 'Your wallet has no USDFC in Filecoin Pay and no active storage. Use "Top up 10 USDFC" to deposit, then upload a dataset to start monitoring.'
                   : 'This account is funded but has no registered datasets. Upload a dataset via the Synapse SDK to begin triage monitoring.'}
               </p>
             </div>
           ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
             {datasets.map((ds) => (
-              <div key={ds.datasetId} className="card-glass group">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold text-white">{ds.name}</h3>
-                  <span className={`badge ${
-                    ds.status === 'active' ? 'badge-success' : 'badge-danger'
-                  }`}>
-                    {ds.status.toUpperCase()}
+              <div key={ds.datasetId} className="card p-6 card-hover">
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="text-lg font-semibold text-ink">{ds.name}</h3>
+                  <span className={`badge ${ds.status === 'active' ? 'badge-healthy' : 'badge-warning'}`}>
+                    {ds.status}
                   </span>
                 </div>
-                 
+
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Declared Value <RealBadge /></span>
-                    <span className="text-lg font-mono text-white">{ds.declaredValue}</span>
+                    <span className="text-ink-3 text-sm">Declared Value<RealBadge /></span>
+                    <span className="text-base font-mono font-semibold text-ink">{ds.declaredValue}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Size</span>
-                    <span className="text-lg font-mono text-white">{ds.sizeBytes} bytes</span>
+                    <span className="text-ink-3 text-sm">Size</span>
+                    <span className="text-base font-mono text-ink">{ds.sizeBytes} bytes</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Cost / Epoch <SimulatedBadge /></span>
-                    <span className="text-lg font-mono text-white">{formatWei(ds.costPerEpoch)} USDFC</span>
+                    <span className="text-ink-3 text-sm">Cost / Epoch<SimulatedBadge /></span>
+                    <span className="text-base font-mono text-ink">{formatWei(ds.costPerEpoch)} USDFC</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Dataset ID <RealBadge /></span>
-                    <ExplorerLink href={`https://calibration.filfox.info/en/address/${account ? '0x6c79C23ef70df857a0544111a29A21b655709090' : ''}`} className="text-lg font-mono">
+                    <span className="text-ink-3 text-sm">Dataset ID<RealBadge /></span>
+                    <ExplorerLink href={`https://calibration.filfox.info/en/address/${account ? '0x6c79C23ef70df857a0544111a29A21b655709090' : ''}`}>
                       #{ds.datasetId}
                     </ExplorerLink>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">PieceCID</span>
-                    <ExplorerLink href={`https://cid.ipfs.io/#${ds.pieceCid}`} className="text-sm font-mono text-gray-300 truncate max-w-[200px]">
-                      {ds.pieceCid.slice(0, 20)}...
+                    <span className="text-ink-3 text-sm">PieceCID</span>
+                    <ExplorerLink href={`https://cid.ipfs.io/#${ds.pieceCid}`}>
+                      {shortenHash(ds.pieceCid, 10, 4)}
                     </ExplorerLink>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Provider</span>
-                    <a href={ds.provider} target="_blank" rel="noopener noreferrer" className="text-sm font-mono text-gray-300 truncate max-w-[200px] hover:text-white transition">
+                    <span className="text-ink-3 text-sm">Provider</span>
+                    <a href={ds.provider} target="_blank" rel="noopener noreferrer" className="text-xs font-mono text-ink-2 hover:text-ink transition truncate max-w-[200px]">
                       {ds.provider.replace('https://', '')}
                     </a>
                   </div>
 
                   {ds.status === 'paused' && (
-                    <div className="pt-4 border-t border-gray-800 mt-4">
+                    <div className="pt-4 border-t border-line mt-4">
                       <button
                         onClick={() => verifyPause(ds.datasetId)}
                         disabled={verifyingId === ds.datasetId}
-                        className="w-full px-4 py-3 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800 text-white font-medium rounded-xl transition border border-gray-700"
+                        className="btn-secondary w-full"
                       >
-                        {verifyingId === ds.datasetId ? 'Verifying...' : 'Verify Pause'}
+                        {verifyingId === ds.datasetId ? <><span className="spinner" /> Verifying…</> : 'Verify Pause'}
                       </button>
                       {verifyResult[ds.datasetId] && (
-                        <div className={`mt-3 text-sm p-3 rounded-xl ${
-                          verifyResult[ds.datasetId].accessible
-                            ? 'bg-yellow-900/30 text-yellow-200 border border-yellow-800/50'
-                            : 'bg-green-900/30 text-green-200 border border-green-800/50'
+                        <div className={`mt-3 text-sm p-3 rounded-lg ${
+                          verifyResult[ds.datasetId].accessible ? 'surface-warning text-warning-fg' : 'surface-healthy text-success-fg'
                         }`}>
                           {verifyResult[ds.datasetId].accessible
                             ? 'Provider still serves cached piece, but payment rail is terminated — no new charges.'
@@ -1186,21 +1201,21 @@ export default function Demo() {
           </div>
           )}
 
-          {/* Claude Explanation + Logs */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div className="card-glass">
+          {/* Claude Explanation */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+            <div className="card p-6">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-pink-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">AI</span>
+                <div className="w-7 h-7 rounded-lg gradient-brand flex items-center justify-center">
+                  <span className="text-white text-[10px] font-bold">AI</span>
                 </div>
-                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Claude Explanation</h3>
+                <h3 className="text-xs font-semibold text-ink-3 uppercase tracking-wider">Claude Explanation</h3>
               </div>
               {latestDecision?.explanation ? (
-                <p className="text-gray-200 leading-relaxed text-lg">{latestDecision.explanation}</p>
+                <p className="text-ink leading-relaxed">{latestDecision.explanation}</p>
               ) : useWallet ? (
-                <p className="text-gray-500">Click <span className="text-white font-medium">Check Now</span> to see a wallet-derived runway analysis.</p>
+                <p className="text-ink-3">Click <span className="text-ink font-medium">Check Now</span> to see a wallet-derived runway analysis.</p>
               ) : (
-                <p className="text-gray-500">Run a check to generate an explanation.</p>
+                <p className="text-ink-3">Run a check to generate an explanation.</p>
               )}
             </div>
           </div>
