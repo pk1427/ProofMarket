@@ -24,5 +24,14 @@
     "status": "completed",
     "newDatasetId": "32681",
     "txHash": "0xdaee64fa4d0fde281f5eb4b2580ccd94a0e0ac30c21bde0dd355f4b2341509c6"
+  },
+  {
+    "timestamp": "2026-09-03T18:23:41.790Z",
+    "action": "pause",
+    "datasetName": "raw-sensor-archive.txt",
+    "datasetId": "32681",
+    "status": "completed",
+    "txHash": "0xc5d1c7431286da876a93f2692bd2a233e2cd4823f0bcb3fb3820a8330c498bf5",
+    "endEpoch": "4124182"
   }
 ]

@@ -2,7 +2,7 @@ import 'dotenv/config'
 import { fileURLToPath } from 'node:url'
 import express from 'express'
 import cors from 'cors'
-import { getAccountState, getBalance, getRunway, createPaymentsClient } from './paymentsClient.ts'
+import { getAccountState, getBalance, getRunway, createPaymentsClient, waitForReceipt } from './paymentsClient.ts'
 import { runDecisionLoop, type Dataset, type DecisionResult } from './decisionLoop.ts'
 import { generateExplanation, generateFallbackExplanation, type ExplanationInput } from './explain.ts'
 import { pauseDataset, resumeDataset, type InterventionResult } from './intervention.ts'
@@ -80,9 +80,16 @@ app.get('/api/account', async (_req, res) => {
   }
 })
 
-app.get('/api/datasets', (_req, res) => {
+app.get('/api/datasets', (req, res) => {
   try {
     ensureDataDir()
+    const address = (req.query.address as string)?.toLowerCase()
+    if (address) {
+      const path = join(DATA_DIR, `datasets-${address}.json`)
+      if (!existsSync(path)) return res.json([])
+      const raw = readFileSync(path, 'utf-8')
+      return res.json(JSON.parse(raw))
+    }
     if (!existsSync(DATASETS_FILE)) {
       return res.json([])
     }
@@ -97,7 +104,13 @@ app.get('/api/datasets', (_req, res) => {
 app.post('/api/datasets', (req, res) => {
   try {
     ensureDataDir()
-    const datasets = Array.isArray(req.body) ? req.body : [req.body]
+    const address = (req.body?.address as string)?.toLowerCase()
+    const datasets = Array.isArray(req.body?.datasets) ? req.body.datasets : (Array.isArray(req.body) ? req.body : [req.body])
+    if (address) {
+      const path = join(DATA_DIR, `datasets-${address}.json`)
+      writeFileSync(path, JSON.stringify(datasets, null, 2))
+      return res.json({ success: true, count: datasets.length, scope: address })
+    }
     writeFileSync(DATASETS_FILE, JSON.stringify(datasets, null, 2))
     res.json({ success: true, count: datasets.length })
   } catch (err) {
@@ -271,7 +284,7 @@ app.post('/api/deposit', async (req, res) => {
       return res.status(400).json({ error: 'amount must be > 0 (wei)' })
     }
 
-    const { synapse, client } = createPaymentsClient()
+    const { synapse, publicClient } = createPaymentsClient()
     const before = await synapse.payments.walletBalance({ token: TOKENS.USDFC })
     if (before < amountWei) {
       return res.status(400).json({
@@ -280,17 +293,20 @@ app.post('/api/deposit', async (req, res) => {
     }
 
     const warmStorageAddress = calibrationChain.contracts.fwss.address
-    const approveTx = await synapse.payments.approveService({
+    const approveTxHash = await synapse.payments.approveService({
       service: warmStorageAddress,
       rateAllowance: amountWei,
       lockupAllowance: amountWei,
       maxLockupPeriod: 100_000n,
       token: TOKENS.USDFC,
     })
-    const depositTx = await synapse.payments.deposit({
+    const depositTxHash = await synapse.payments.deposit({
       amount: amountWei,
       token: TOKENS.USDFC,
     })
+
+    const approveReceipt = await waitForReceipt(publicClient, approveTxHash as `0x${string}`)
+    const depositReceipt = await waitForReceipt(publicClient, depositTxHash as `0x${string}`)
 
     const after = await synapse.payments.accountSummary({ token: TOKENS.USDFC })
 
@@ -304,8 +320,10 @@ app.post('/api/deposit', async (req, res) => {
       paymentsBalanceAfter: after.availableFunds.toString(),
       paymentsBalanceAfterUSDFC: Number(after.availableFunds) / 1e18,
       runwayAfter: after.runwayInEpochs.toString(),
-      approveTxHash: typeof approveTx === 'string' ? approveTx : JSON.stringify(approveTx),
-      depositTxHash: typeof depositTx === 'string' ? depositTx : JSON.stringify(depositTx),
+      approveTxHash,
+      depositTxHash,
+      approveBlockNumber: approveReceipt.blockNumber.toString(),
+      depositBlockNumber: depositReceipt.blockNumber.toString(),
     })
   } catch (err) {
     console.error('POST /api/deposit error:', err)
@@ -320,7 +338,7 @@ app.post('/api/withdraw', async (req, res) => {
       return res.status(400).json({ error: 'amount must be > 0 (wei)' })
     }
 
-    const { synapse } = createPaymentsClient()
+    const { synapse, publicClient } = createPaymentsClient()
     const before = await synapse.payments.accountSummary({ token: TOKENS.USDFC })
 
     const amount = amountWei ?? before.availableFunds / 10n
@@ -330,10 +348,12 @@ app.post('/api/withdraw', async (req, res) => {
       })
     }
 
-    const tx = await synapse.payments.withdraw({
+    const txHash = await synapse.payments.withdraw({
       amount,
       token: TOKENS.USDFC,
     })
+
+    const receipt = await waitForReceipt(publicClient, txHash as `0x${string}`)
 
     const after = await synapse.payments.accountSummary({ token: TOKENS.USDFC })
 
@@ -346,7 +366,8 @@ app.post('/api/withdraw', async (req, res) => {
       paymentsBalanceAfter: after.availableFunds.toString(),
       paymentsBalanceAfterUSDFC: Number(after.availableFunds) / 1e18,
       runwayAfter: after.runwayInEpochs.toString(),
-      txHash: typeof tx === 'string' ? tx : JSON.stringify(tx),
+      txHash,
+      blockNumber: receipt.blockNumber.toString(),
     })
   } catch (err) {
     console.error('POST /api/withdraw error:', err)

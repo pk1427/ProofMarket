@@ -173,6 +173,19 @@ There is no separate "simulated cost model" driving this math anywhere in the de
 
 ---
 
+## Wallet Mode (Connect Your Own Wallet)
+
+The dashboard supports two modes side by side:
+
+- **Demo mode (default)** — the backend signs all transactions with a funded Calibration account. State is shared, deterministic, ideal for a recorded walkthrough.
+- **Wallet mode** — click **Connect Wallet** in the navbar, pick MetaMask/Rabby/etc., and every read is from the connected address and every write is signed by your wallet. The triage engine runs entirely client-side in this mode.
+
+Wallet mode reads via `Pay.getAccountSummary` from `@filoz/synapse-core` over a public RPC client (no signer needed for reads). Writes go through the Synapse SDK with the connected wallet client, so MetaMask signs `approveService`, `deposit`, `withdraw`, `createDataSetAndAddPieces`, and `terminateServiceSync` directly.
+
+In wallet mode, the dashboard also exposes a **Create Demo Datasets** action that uploads two ~127-byte pieces and registers them onchain as `customer-model-v3.txt` (declared value 9) and `raw-sensor-archive.txt` (declared value 3). The triage engine then uses the real per-rail lockup rates to compute runway and recommend a pause or resume.
+
+---
+
 ## Demo Flow
 
 1. **Healthy state.** Both datasets active, real balance and runway visible and ticking on the dashboard, alongside an inline chain-verification readout (balance, transaction reference, current epoch) so the numbers don't require a separate block explorer tab to trust.

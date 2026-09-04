@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
 
 const features = [
   ['Read the account', 'Checks the Filecoin Pay balance, current spend, and remaining runway.'],
@@ -17,7 +18,11 @@ export default function Landing() {
   return <div className="min-h-screen bg-slate-50 text-slate-900">
     <header className="border-b border-slate-200 bg-white"><div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
       <Link to="/" className="flex items-center gap-3 font-semibold tracking-tight"><span className="grid h-8 w-8 place-items-center rounded-md bg-blue-600 text-sm text-white">PM</span>ProofMarket</Link>
-      <nav className="hidden items-center gap-7 md:flex"><a className="nav-link" href="#how-it-works">How it works</a><Link className="nav-link" to="/verification">History</Link></nav><Link to="/demo" className="btn-primary">Open dashboard</Link>
+      <nav className="hidden items-center gap-7 md:flex"><a className="nav-link" href="#how-it-works">How it works</a><Link className="nav-link" to="/verification">History</Link></nav>
+      <div className="flex items-center gap-3">
+        <ConnectButton accountStatus="address" chainStatus="icon" showBalance={false} />
+        <Link to="/demo" className="btn-primary">Open dashboard</Link>
+      </div>
     </div></header>
     <main>
       <section className="border-b border-slate-200 bg-white"><div className="mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-[1.15fr_.85fr] lg:items-center lg:py-28">

@@ -1,4 +1,4 @@
-import { createClient, http } from 'viem'
+import { createClient, http, publicActions, type Client, type Transport, type Chain, type Account } from 'viem'
 import { Synapse, TOKENS } from '@filoz/synapse-sdk'
 import { calibration as calibrationChain } from '@filoz/synapse-core/chains'
 import { privateKeyToAccount } from 'viem/accounts'
@@ -11,10 +11,18 @@ if (!PRIVATE_KEY) {
 
 const normalizedKey = PRIVATE_KEY.startsWith('0x') ? PRIVATE_KEY : `0x${PRIVATE_KEY}`
 
-export function createPaymentsClient() {
+export type SynapseAccount = ReturnType<typeof privateKeyToAccount>
+export type SynapsePublicClient = Client<Transport, Chain, Account>
+
+export function createPaymentsClient(): {
+  synapse: Synapse
+  client: Client<Transport, Chain, Account>
+  publicClient: SynapsePublicClient
+  account: SynapseAccount
+} {
   const account = privateKeyToAccount(normalizedKey as `0x${string}`)
 
-  const client = createClient({
+  const client: Client<Transport, Chain, Account> = createClient({
     chain: calibrationChain,
     transport: http('https://api.calibration.node.glif.io/rpc/v1'),
     account,
@@ -25,7 +33,13 @@ export function createPaymentsClient() {
     source: 'proofmarket-backend',
   })
 
-  return { synapse, client, account }
+  const publicClient = client.extend(publicActions) as unknown as SynapsePublicClient
+
+  return { synapse, client, publicClient, account }
+}
+
+export async function waitForReceipt(client: any, hash: `0x${string}`) {
+  return await client.waitForTransactionReceipt({ hash })
 }
 
 export async function getBalance(): Promise<bigint> {

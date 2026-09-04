@@ -356,5 +356,53 @@
     "resumeCandidate": null,
     "reason": "Runway 104720859 epochs is above threshold 100000000. No action needed.",
     "explanation": "With a current runway of 104,720,859 epochs against a threshold of 100,000,000 epochs, this storage portfolio — comprising **customer-model-v3.txt** (high declared value: 9) and **raw-sensor-archive.txt** (lower declared value: 3) — is comfortably funded and requires no immediate intervention. The combined lockup rate of 0.000002 USDFC/epoch is extremely low relative to the 232.713023 USDFC balance, meaning both datasets remain well-protected without any prioritization trade-offs being necessary right now. If the runway were to dip below threshold, **raw-sensor-archive.txt** would be the first candidate for removal given its lower declared value, preserving **customer-model-v3.txt** — but that decision point is not yet reached."
+  },
+  {
+    "timestamp": "2026-09-03T18:16:57.620Z",
+    "outcome": "critical",
+    "balance": "46430738401532862525",
+    "runway": "20893832",
+    "lockupRate": "2222222235587",
+    "currentEpoch": "4037766",
+    "totalCostPerEpoch": "1666666673349",
+    "remainingEpochs": "20893832",
+    "threshold": "100000000",
+    "protectedDataset": "customer-model-v3.txt",
+    "pausedDataset": "raw-sensor-archive.txt",
+    "resumeCandidate": null,
+    "reason": "Runway 20893832 epochs is below threshold 100000000. Protected customer-model-v3.txt (declared_value=9) over raw-sensor-archive.txt (declared_value=3) by priority.",
+    "explanation": "With a current runway of 20,893,832 epochs against a threshold of 100,000,000 epochs, this portfolio's storage budget falls significantly short of the required safety margin, triggering a triage decision. To make the most of the remaining balance of 46.430738 USDFC, **customer-model-v3.txt** (declared_value=9) was prioritized and kept active, while **raw-sensor-archive.txt** (declared_value=3) was paused. The reasoning is straightforward: preserving the higher-value asset maximizes utility per epoch spent at the 0.000002 USDFC/epoch rate. Raw sensor archive data, carrying roughly one-third the declared value of the customer model, represents the lower-risk sacrifice until the budget is replenished and runway climbs back above the 100,000,000-epoch threshold."
+  },
+  {
+    "timestamp": "2026-09-03T18:27:38.068Z",
+    "outcome": "critical",
+    "balance": "56430697845977032991",
+    "runway": "67716836",
+    "lockupRate": "833333343357",
+    "currentEpoch": "4037788",
+    "totalCostPerEpoch": "1666666673349",
+    "remainingEpochs": "67716836",
+    "threshold": "100000000",
+    "protectedDataset": "customer-model-v3.txt",
+    "pausedDataset": "raw-sensor-archive.txt",
+    "resumeCandidate": null,
+    "reason": "Runway 67716836 epochs is below threshold 100000000. Protected customer-model-v3.txt (declared_value=9) over raw-sensor-archive.txt (declared_value=3) by priority.",
+    "explanation": "With a runway of 67,716,836 epochs against a threshold of 100,000,000 epochs, this portfolio's balance of 56.43 USDFC is insufficient to sustain continuous storage for both datasets at the current combined rate of 0.000002 USDFC/epoch. To maximize value preservation under this constraint, **customer-model-v3.txt** (declared value: 9) was kept active, while **raw-sensor-archive.txt** (declared value: 3) was paused. The trade-off is deliberate: pausing raw-sensor-archive.txt frees up its share of the epoch burn rate, extending coverage for the higher-priority asset. Raw-sensor-archive.txt can be resumed once the balance is replenished or the runway climbs back above the 100,000,000-epoch threshold."
+  },
+  {
+    "timestamp": "2026-09-03T18:32:15.961Z",
+    "outcome": "resume_insufficient",
+    "balance": "56430690345976942778",
+    "runway": "67716827",
+    "lockupRate": "833333343357",
+    "currentEpoch": "4037797",
+    "totalCostPerEpoch": "277777781119",
+    "remainingEpochs": "67716827",
+    "threshold": "100000000",
+    "protectedDataset": null,
+    "pausedDataset": "raw-sensor-archive.txt",
+    "resumeCandidate": "raw-sensor-archive.txt",
+    "reason": "Runway recovered to 67716827 epochs, but that is still insufficient to safely resume raw-sensor-archive.txt. Projected remaining after resume: 25393810 epochs, below the 100000000-epoch threshold.",
+    "explanation": "With a current runway of 67,716,827 epochs, the storage budget is recovering but remains below the 100,000,000-epoch safety threshold required to resume **raw-sensor-archive.txt**. Reactivating it would consume epochs at its rail rate, dropping the projected remaining runway to just 25,393,810 epochs — well short of the threshold. Meanwhile, **customer-model-v3.txt** (declared value: 9) retains priority and continues protected storage, as its higher business value justifies first claim on the available runway. **raw-sensor-archive.txt** (declared value: 3) must remain paused until the runway grows sufficiently past 100,000,000 epochs to absorb its costs without falling below the safety floor."
   }
 ]

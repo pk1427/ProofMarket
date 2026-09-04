@@ -75,6 +75,14 @@ export async function pauseDataset(datasetId: string, datasetName: string): Prom
     result.txHash = receipt.transactionHash
     result.endEpoch = terminatedEvent.args.endEpoch.toString()
     result.status = 'completed'
+
+    const datasets = loadDatasets()
+    const updated = datasets.map((d: any) =>
+      d.datasetId === datasetId
+        ? { ...d, status: 'paused', endEpoch: terminatedEvent.args.endEpoch.toString() }
+        : d
+    )
+    saveDatasets(updated)
   } catch (err) {
     result.status = 'failed'
     result.error = err instanceof Error ? err.message : String(err)

@@ -41,8 +41,16 @@ export type DecisionResult = {
 export const TRIAGE_THRESHOLD_EPOCHS = Number(process.env.TRIAGE_THRESHOLD_EPOCHS ?? 100_000_000)
 export const RESUME_MARGIN_EPOCHS = Number(process.env.RESUME_MARGIN_EPOCHS ?? 10_000_000)
 
-function loadDatasets(): Dataset[] {
-  const path = join(__dirname, '..', 'data', 'datasets.json')
+function loadDatasets(address?: string): Dataset[] {
+  const baseDir = join(__dirname, '..', 'data')
+  if (address) {
+    const scoped = join(baseDir, `datasets-${address.toLowerCase()}.json`)
+    if (existsSync(scoped)) {
+      return JSON.parse(readFileSync(scoped, 'utf-8')) as Dataset[]
+    }
+    return []
+  }
+  const path = join(baseDir, 'datasets.json')
   if (!existsSync(path)) return []
   const raw = readFileSync(path, 'utf-8')
   return JSON.parse(raw) as Dataset[]
@@ -76,9 +84,9 @@ async function getDatasetRailRate(client: Awaited<ReturnType<typeof createPaymen
   return effective.ratePerEpoch
 }
 
-export async function runDecisionLoop(): Promise<DecisionResult> {
+export async function runDecisionLoop(address?: string): Promise<DecisionResult> {
   const state = await getAccountState()
-  const datasets = loadDatasets()
+  const datasets = loadDatasets(address)
   const { client } = createPaymentsClient()
 
   const activeDatasets = datasets.filter((d) => d.status === 'active')
