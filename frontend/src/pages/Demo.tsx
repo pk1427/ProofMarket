@@ -417,7 +417,28 @@ export default function Demo() {
     setError(null)
     try {
       if (useWallet && walletClient) {
-        const result = await pauseDatasetViaWallet(walletClient, dataset.datasetId)
+        let result: { txHash: string; endEpoch: string }
+        try {
+          result = await pauseDatasetViaWallet(walletClient, dataset.datasetId)
+        } catch (err: any) {
+          const msg = err instanceof Error ? err.message : String(err)
+          const alreadyTerminated = /DataSetPaymentAlreadyTerminated/i.test(msg)
+          if (alreadyTerminated) {
+            setTransactions((prev) => prev.map((t) => t.id === entry.id ? {
+              ...t, status: 'completed',
+              detail: `Dataset #${dataset.datasetId} · already terminated on-chain`,
+            } : t))
+            setDatasets((prev) => {
+              const next = prev.map((d) => d.datasetId === dataset.datasetId ? { ...d, status: 'paused' } : d)
+              try { localStorage.setItem(`pm-datasets-${address!.toLowerCase()}`, JSON.stringify(next)) } catch {}
+              return next
+            })
+            await fetchAccount()
+            setLatestDecision(null)
+            return
+          }
+          throw err
+        }
         setTransactions((prev) => prev.map((t) => t.id === entry.id ? {
           ...t,
           status: 'pending',
