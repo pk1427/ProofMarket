@@ -133,13 +133,17 @@ app.get('/api/decisions', (_req, res) => {
   }
 })
 
-app.get('/api/interventions', (_req, res) => {
+app.get('/api/interventions', (req, res) => {
   try {
     ensureDataDir()
-    if (!existsSync(INTERVENTIONS_FILE)) {
+    const address = (req.query.address as string)?.toLowerCase()
+    const file = address
+      ? join(DATA_DIR, `interventions-${address}.json`)
+      : INTERVENTIONS_FILE
+    if (!existsSync(file)) {
       return res.json([])
     }
-    const raw = readFileSync(INTERVENTIONS_FILE, 'utf-8')
+    const raw = readFileSync(file, 'utf-8')
     res.json(JSON.parse(raw))
   } catch (err) {
     console.error('GET /api/interventions error:', err)
@@ -147,9 +151,30 @@ app.get('/api/interventions', (_req, res) => {
   }
 })
 
+app.post('/api/interventions', (req, res) => {
+  try {
+    ensureDataDir()
+    const address = (req.body?.address as string)?.toLowerCase()
+    const entry = req.body?.entry
+    if (!entry || typeof entry !== 'object') {
+      return res.status(400).json({ error: 'entry is required' })
+    }
+    const file = address
+      ? join(DATA_DIR, `interventions-${address}.json`)
+      : INTERVENTIONS_FILE
+    const existing = existsSync(file) ? JSON.parse(readFileSync(file, 'utf-8')) : []
+    existing.push(entry)
+    writeFileSync(file, JSON.stringify(existing, null, 2))
+    res.json({ success: true, scope: address ?? 'demo' })
+  } catch (err) {
+    console.error('POST /api/interventions error:', err)
+    res.status(500).json({ error: 'Failed to write intervention' })
+  }
+})
+
 app.post('/api/act', async (req, res) => {
   try {
-    const { datasetId, datasetName } = req.body ?? {}
+    const { datasetId, datasetName, address } = req.body ?? {}
     if (!datasetId || !datasetName) {
       return res.status(400).json({ error: 'datasetId and datasetName are required' })
     }
@@ -159,7 +184,7 @@ app.post('/api/act', async (req, res) => {
       return res.status(400).json({ error: 'Invalid datasetId' })
     }
 
-    const result = await pauseDataset(datasetId, datasetName)
+    const result = await pauseDataset(datasetId, datasetName, address?.toLowerCase())
     res.json(result)
   } catch (err) {
     console.error('POST /api/act error:', err)
@@ -169,7 +194,7 @@ app.post('/api/act', async (req, res) => {
 
 app.post('/api/resume', async (req, res) => {
   try {
-    const { datasetId, datasetName } = req.body ?? {}
+    const { datasetId, datasetName, address } = req.body ?? {}
     if (!datasetId || !datasetName) {
       return res.status(400).json({ error: 'datasetId and datasetName are required' })
     }
@@ -179,7 +204,7 @@ app.post('/api/resume', async (req, res) => {
       return res.status(400).json({ error: 'Invalid datasetId' })
     }
 
-    const result = await resumeDataset(datasetId, datasetName)
+    const result = await resumeDataset(datasetId, datasetName, address?.toLowerCase())
     res.json(result)
   } catch (err) {
     console.error('POST /api/resume error:', err)
@@ -390,6 +415,8 @@ app.listen(PORT, () => {
   console.log(`  GET  /api/check`)
   console.log(`  GET  /api/decisions`)
   console.log(`  GET  /api/interventions`)
+  console.log(`  POST /api/interventions`)
   console.log(`  POST /api/act`)
+  console.log(`  POST /api/resume`)
   console.log(`  GET  /api/verify-pause/:datasetId`)
 })

@@ -125,6 +125,19 @@ function createClientWithPublic(walletClient: WalletClient<Transport, Chain, Acc
   return { publicClient: walletClient.extend(publicActions) }
 }
 
+export async function recordIntervention(entry: Record<string, unknown>, address: string): Promise<void> {
+  const API_BASE = (import.meta.env.VITE_API_BASE as string) || ''
+  try {
+    await fetch(`${API_BASE}/api/interventions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address, entry }),
+    })
+  } catch (err) {
+    console.warn('[recordIntervention] failed:', err)
+  }
+}
+
 export async function pauseDatasetViaWallet(
   walletClient: WalletClient<Transport, Chain, Account>,
   datasetId: string,

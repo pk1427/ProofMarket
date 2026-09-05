@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useAccount } from 'wagmi'
 import type { Dataset, InterventionResult } from '../types'
 import { Navbar } from '../components/Navbar'
 
@@ -30,6 +31,8 @@ function StatusPill({ status }: { status: 'active' | 'paused' | 'completed' | 'p
 }
 
 export default function Verification() {
+  const { address, isConnected } = useAccount()
+  const scopeAddress = isConnected && address ? address : undefined
   const [datasets, setDatasets] = useState<Dataset[]>([])
   const [interventions, setInterventions] = useState<InterventionResult[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -41,9 +44,10 @@ export default function Verification() {
     setLoading(true)
     setError(null)
     try {
+      const qs = scopeAddress ? `?address=${scopeAddress}` : ''
       const [dsRes, intRes] = await Promise.all([
-        fetch(`${API_BASE}/api/datasets`),
-        fetch(`${API_BASE}/api/interventions`),
+        fetch(`${API_BASE}/api/datasets${qs}`),
+        fetch(`${API_BASE}/api/interventions${qs}`),
       ])
       if (!dsRes.ok) throw new Error('Failed to fetch datasets')
       if (!intRes.ok) throw new Error('Failed to fetch interventions')
@@ -54,7 +58,7 @@ export default function Verification() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [scopeAddress])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -80,7 +84,17 @@ export default function Verification() {
         <div className="max-w-4xl mx-auto px-6 py-12">
           {/* Header */}
           <div className="mb-12">
-            <p className="text-xs font-medium text-ink-3 uppercase tracking-wide mb-3">Verification</p>
+            <div className="flex items-center gap-2 mb-3">
+              <p className="text-xs font-medium text-ink-3 uppercase tracking-wide">Verification</p>
+              {scopeAddress ? (
+                <span className="pill-success">
+                  <span className="pulse-dot" />
+                  wallet · {scopeAddress.slice(0, 6)}…{scopeAddress.slice(-4)}
+                </span>
+              ) : (
+                <span className="pill-neutral">demo account · 0x6c79…9090</span>
+              )}
+            </div>
             <h1 className="text-3xl font-semibold tracking-tight text-ink">Proof of intervention.</h1>
             <p className="mt-3 text-ink-2 max-w-2xl leading-relaxed">
               After pausing a dataset, click <span className="font-medium text-ink">Verify Pause</span> to check

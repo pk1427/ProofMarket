@@ -33,26 +33,35 @@ export type InterventionResult = {
   error?: string
 }
 
-const HISTORY_FILE = join(__dirname, '..', 'data', 'interventions.json')
-
-function appendIntervention(result: InterventionResult) {
-  const existing = existsSync(HISTORY_FILE) ? JSON.parse(readFileSync(HISTORY_FILE, 'utf-8')) : []
-  existing.push(result)
-  writeFileSync(HISTORY_FILE, JSON.stringify(existing, null, 2))
+function getHistoryFile(address?: string) {
+  if (address) return join(__dirname, '..', 'data', `interventions-${address.toLowerCase()}.json`)
+  return join(__dirname, '..', 'data', 'interventions.json')
 }
 
-function loadDatasets() {
-  const path = join(__dirname, '..', 'data', 'datasets.json')
+function appendIntervention(result: InterventionResult, address?: string) {
+  const file = getHistoryFile(address)
+  const existing = existsSync(file) ? JSON.parse(readFileSync(file, 'utf-8')) : []
+  existing.push(result)
+  writeFileSync(file, JSON.stringify(existing, null, 2))
+}
+
+function getDatasetsFile(address?: string) {
+  if (address) return join(__dirname, '..', 'data', `datasets-${address.toLowerCase()}.json`)
+  return join(__dirname, '..', 'data', 'datasets.json')
+}
+
+function loadDatasets(address?: string) {
+  const path = getDatasetsFile(address)
   if (!existsSync(path)) return []
   return JSON.parse(readFileSync(path, 'utf-8'))
 }
 
-function saveDatasets(datasets: any[]) {
-  const path = join(__dirname, '..', 'data', 'datasets.json')
+function saveDatasets(datasets: any[], address?: string) {
+  const path = getDatasetsFile(address)
   writeFileSync(path, JSON.stringify(datasets, null, 2))
 }
 
-export async function pauseDataset(datasetId: string, datasetName: string): Promise<InterventionResult> {
+export async function pauseDataset(datasetId: string, datasetName: string, address?: string): Promise<InterventionResult> {
   const result: InterventionResult = {
     timestamp: new Date().toISOString(),
     action: 'pause',
@@ -76,23 +85,23 @@ export async function pauseDataset(datasetId: string, datasetName: string): Prom
     result.endEpoch = terminatedEvent.args.endEpoch.toString()
     result.status = 'completed'
 
-    const datasets = loadDatasets()
+    const datasets = loadDatasets(address)
     const updated = datasets.map((d: any) =>
       d.datasetId === datasetId
         ? { ...d, status: 'paused', endEpoch: terminatedEvent.args.endEpoch.toString() }
         : d
     )
-    saveDatasets(updated)
+    saveDatasets(updated, address)
   } catch (err) {
     result.status = 'failed'
     result.error = err instanceof Error ? err.message : String(err)
   }
 
-  appendIntervention(result)
+  appendIntervention(result, address)
   return result
 }
 
-export async function resumeDataset(datasetId: string, datasetName: string): Promise<InterventionResult> {
+export async function resumeDataset(datasetId: string, datasetName: string, address?: string): Promise<InterventionResult> {
   const result: InterventionResult = {
     timestamp: new Date().toISOString(),
     action: 'resume',
@@ -102,7 +111,7 @@ export async function resumeDataset(datasetId: string, datasetName: string): Pro
   }
 
   try {
-    const datasets = loadDatasets()
+    const datasets = loadDatasets(address)
     const dataset = datasets.find((d: any) => d.datasetId === datasetId)
     if (!dataset) {
       throw new Error(`Dataset #${datasetId} not found in local metadata`)
@@ -163,13 +172,13 @@ export async function resumeDataset(datasetId: string, datasetName: string): Pro
         ? { ...d, status: 'active', datasetId: createdDataset.dataSetId.toString(), pieceCid: pieceCid.toString() }
         : d
     )
-    saveDatasets(updated)
+    saveDatasets(updated, address)
   } catch (err) {
     result.status = 'failed'
     result.error = err instanceof Error ? err.message : String(err)
   }
 
-  appendIntervention(result)
+  appendIntervention(result, address)
   return result
 }
 

@@ -5,7 +5,7 @@ import { createPublicClient, http } from 'viem'
 import * as Pay from '@filoz/synapse-core/pay'
 import type { AccountState, Dataset, DecisionResult, InterventionResult, TransactionEntry } from '../types'
 import { Navbar } from '../components/Navbar'
-import { getSynapseForWallet, usdfcToWei, createDemoDataset, pauseDatasetViaWallet, resumeDatasetViaWallet } from '../synapseClient'
+import { getSynapseForWallet, usdfcToWei, createDemoDataset, pauseDatasetViaWallet, resumeDatasetViaWallet, recordIntervention } from '../synapseClient'
 import { calibration as calibrationChain } from '@filoz/synapse-core/chains'
 import { TOKENS } from '@filoz/synapse-sdk'
 
@@ -424,6 +424,15 @@ export default function Demo() {
           txHash: result.txHash,
           detail: `Dataset #${dataset.datasetId} · endEpoch ${result.endEpoch} · submitted`,
         } : t))
+        void recordIntervention({
+          timestamp: entry.timestamp,
+          action: 'pause',
+          datasetName: dataset.name,
+          datasetId: dataset.datasetId,
+          txHash: result.txHash,
+          endEpoch: result.endEpoch,
+          status: 'pending',
+        }, address!)
         ;(publicClient as any)?.waitForTransactionReceipt?.({ hash: result.txHash as `0x${string}` })
           .then(async (r: any) => {
             setTransactions((prev) => prev.map((t) => t.id === entry.id ? {
@@ -496,6 +505,15 @@ export default function Demo() {
           txHash: result.txHash,
           detail: `New dataset #${result.newDatasetId} · submitted`,
         } : t))
+        void recordIntervention({
+          timestamp: entry.timestamp,
+          action: 'resume',
+          datasetName: dataset.name,
+          datasetId: dataset.datasetId,
+          newDatasetId: result.newDatasetId,
+          txHash: result.txHash,
+          status: 'pending',
+        }, address!)
         setDatasets((prev) => {
           const next = prev.map((d) => d.datasetId === dataset.datasetId ? {
             ...d,
