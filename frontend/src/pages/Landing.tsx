@@ -5,41 +5,34 @@ export default function Landing() {
   return (
     <div className="min-h-screen canvas">
       <Navbar />
-      <main className="pt-16">
-        <section className="bg-white">
-          <div className="mx-auto max-w-3xl px-6 py-24 text-center">
-            <p className="mb-5 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-brand-700">
-              <span className="h-1.5 w-1.5 rounded-full bg-brand-600" /> Storage budget management
+      <main className="pt-14">
+        <section className="min-h-[calc(100vh-3.5rem)] flex items-center">
+          <div className="mx-auto max-w-2xl px-6 text-center">
+            <p className="text-xs font-medium text-ink-3 tracking-wide uppercase mb-6">
+              Storage budget management
             </p>
-            <h1 className="text-4xl font-bold tracking-tight text-ink md:text-5xl">
-              Keep the data that <span className="gradient-text">matters most</span>.
+            <h1 className="text-5xl sm:text-6xl font-semibold tracking-tight text-ink leading-[1.05]">
+              Keep the data that<br />
+              <span className="gradient-accent">matters most.</span>
             </h1>
-            <p className="mt-5 text-lg leading-7 text-ink-2">
-              ProofMarket monitors a storage budget, ranks datasets by value, and pauses the
-              lowest-priority one when runway falls below threshold.
+            <p className="mt-7 text-lg text-ink-2 leading-relaxed">
+              ProofMarket monitors a storage budget, ranks datasets by value,
+              and pauses the lowest-priority one when runway falls below threshold.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-              <Link to="/demo" className="btn-primary">
+            <div className="mt-10 flex items-center justify-center gap-3">
+              <Link to="/demo" className="btn-primary px-5 py-2.5">
                 View live account <span aria-hidden="true">→</span>
               </Link>
-              <Link to="/verification" className="btn-secondary">
-                View intervention history
+              <Link to="/verification" className="btn-secondary px-5 py-2.5">
+                View history
               </Link>
             </div>
-            <p className="mt-6 text-xs text-ink-3">
-              Built for the FilecoinTLDR Builder Challenge, Cycle 4 · Filecoin Calibration testnet
+            <p className="mt-12 text-xs text-ink-4">
+              FilecoinTLDR Builder Challenge · Cycle 4 · Calibration testnet
             </p>
           </div>
         </section>
       </main>
-      <footer className="mx-auto flex max-w-3xl flex-col gap-2 px-6 py-8 text-sm text-ink-3 sm:flex-row sm:items-center sm:justify-between">
-        <span>ProofMarket</span>
-        <div className="flex gap-5">
-          <Link to="/demo" className="hover:text-ink transition-colors">Dashboard</Link>
-          <Link to="/verification" className="hover:text-ink transition-colors">Verification</Link>
-          <a href="https://github.com/pk1427/ProofMarket" target="_blank" rel="noreferrer" className="hover:text-ink transition-colors">Source</a>
-        </div>
-      </footer>
     </div>
   )
 }

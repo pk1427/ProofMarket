@@ -19,35 +19,17 @@ function formatWei(wei: string, decimals = 18) {
 }
 
 function SimulatedBadge() {
-  return (
-    <span className="badge badge-warning ml-1.5">Simulated</span>
-  )
+  return <span className="pill-warning ml-1.5">simulated</span>
 }
 
 function RealBadge() {
   return (
-    <span className="badge badge-healthy ml-1.5">
+    <span className="pill-success ml-1.5">
       <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
       </svg>
-      Onchain
+      onchain
     </span>
-  )
-}
-
-function ExplorerLink({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`inline-flex items-center gap-1 text-brand-700 hover:text-brand-500 transition font-mono text-xs ${className || ''}`}
-    >
-      {children}
-      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-      </svg>
-    </a>
   )
 }
 
@@ -671,33 +653,32 @@ export default function Demo() {
     <div className="min-h-screen canvas">
       <Navbar />
 
-      <section className="pt-24 pb-16 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8">
-            <p className="text-xs font-semibold uppercase tracking-wider text-brand-700 mb-3">Live Demo</p>
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-ink mb-3">Live Demo</h1>
-            <p className="text-ink-2 max-w-2xl mx-auto text-base">
+      <section className="pt-20 pb-16 px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto">
+          {/* Header */}
+          <div className="mb-10">
+            <p className="text-xs font-medium text-ink-3 uppercase tracking-wide mb-3">Live Demo</p>
+            <h1 className="text-3xl font-semibold tracking-tight text-ink">Storage triage dashboard</h1>
+            <p className="mt-2 text-ink-2 max-w-2xl">
               {useWallet
                 ? <>Connected to your wallet <span className="font-mono text-ink">{address?.slice(0, 6)}…{address?.slice(-4)}</span> on Calibration testnet. All reads and writes are signed by your wallet.</>
-                : <>This dashboard is connected to a real Calibration testnet account. Every number you see is pulled from Filecoin Pay via the Synapse SDK. Connect your wallet to use your own account.</>
+                : <>Connected to a real Calibration testnet account. Every number is pulled from Filecoin Pay via the Synapse SDK. Connect your wallet to use your own account.</>
               }
             </p>
 
             {isConnected && (
-              <div className={`mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium ${
-                useWallet
-                  ? 'status-pill status-healthy'
-                  : 'status-pill status-warning'
+              <div className={`mt-5 pill ${
+                useWallet ? 'pill-success' : 'pill-warning'
               }`}>
                 {useWallet ? (
                   <>
                     <span className="pulse-dot" />
-                    <span>Connected: <span className="font-mono">{address?.slice(0, 6)}…{address?.slice(-4)}</span></span>
+                    <span>Connected <span className="font-mono">{address?.slice(0, 6)}…{address?.slice(-4)}</span></span>
                     <span className="text-ink-3">· actions sign with your wallet</span>
                   </>
                 ) : (
                   <>
-                    <span>Wrong network — switch to Calibration testnet to interact with your own account</span>
+                    <span>Wrong network — switch to Calibration to interact with your own account</span>
                     <button
                       onClick={() => switchChain({ chainId: calibrationChain.id })}
                       className="ml-2 underline hover:no-underline font-semibold"
@@ -708,107 +689,94 @@ export default function Demo() {
                 )}
               </div>
             )}
+          </div>
 
-            {/* Action Bar */}
-            <div className="mt-6 inline-flex flex-col items-stretch gap-4 p-5 rounded-2xl card max-w-3xl">
-              {/* Row 1: Check Now + Create Datasets */}
-              <div className="flex flex-wrap items-center justify-center gap-3">
+          {/* Action Bar */}
+          <div className="mb-10 grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="md:col-span-3 flex flex-wrap items-center gap-2">
+              <button
+                onClick={runCheck}
+                disabled={loading}
+                className="btn-primary group"
+              >
+                {loading ? <><span className="spinner" /> Checking…</> : <>
+                  Check now
+                  <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                </>}
+              </button>
+              {useWallet && (
                 <button
-                  onClick={runCheck}
-                  disabled={loading}
-                  className="btn-primary group"
-                >
-                  {loading ? <><span className="spinner" /> Checking…</> : <>
-                    Check Now
-                    <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                  </>}
-                </button>
-                {useWallet && (
-                  <button
-                    onClick={runSetupDemo}
-                    disabled={loading || datasets.length > 0}
-                    title="Upload 2 demo datasets onchain from this wallet"
-                    className="btn-secondary"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    {datasets.length > 0 ? `Datasets Ready (${datasets.length})` : 'Create Demo Datasets'}
-                  </button>
-                )}
-              </div>
-
-              {/* Row 2: Deposit with input */}
-              <div className="flex flex-wrap items-center gap-2 justify-center">
-                <label className="label mb-0">Deposit</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
-                  className="input w-24 font-mono"
-                  placeholder="USDFC"
-                  aria-label="Deposit amount in USDFC"
-                />
-                <button
-                  onClick={() => runDeposit(depositAmount)}
-                  disabled={loading || !depositAmount || Number(depositAmount) <= 0}
-                  className="btn-success"
+                  onClick={runSetupDemo}
+                  disabled={loading || datasets.length > 0}
+                  title="Upload 2 demo datasets onchain from this wallet"
+                  className="btn-secondary"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m0-16l-4 4m4-4l4 4M4 20h16" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  Top up
+                  {datasets.length > 0 ? `Datasets ready (${datasets.length})` : 'Create demo datasets'}
                 </button>
-              </div>
-
-              {/* Row 3: Withdraw (input + button + critical) */}
-              <div className="flex flex-wrap items-center gap-2 justify-center">
-                <label className="label mb-0">Withdraw</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={withdrawAmount}
-                  onChange={(e) => setWithdrawAmount(e.target.value)}
-                  className="input w-24 font-mono"
-                  placeholder="USDFC"
-                  aria-label="Withdraw amount in USDFC"
-                />
-                <button
-                  onClick={() => runWithdraw(withdrawAmount)}
-                  disabled={loading || !withdrawAmount || Number(withdrawAmount) <= 0}
-                  className="btn-warning"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 20V4m0 16l-4-4m4 4l4-4M4 4h16" />
-                  </svg>
-                  Withdraw
-                </button>
-                <button
-                  onClick={() => runWithdraw('all')}
-                  disabled={loading}
-                  title="Withdraw everything above the critical threshold"
-                  className="btn-danger"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                  </svg>
-                  To Critical
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2 text-xs text-ink-3 justify-center">
+              )}
+              <span className="ml-auto text-xs text-ink-3 inline-flex items-center gap-1.5">
                 <span className="pulse-dot text-emerald-600" />
-                Every action is a real onchain transaction on Calibration testnet.
-              </div>
+                Every action is an onchain transaction
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="label mb-0 shrink-0">Deposit</label>
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                value={depositAmount}
+                onChange={(e) => setDepositAmount(e.target.value)}
+                className="input font-mono w-full"
+                placeholder="USDFC"
+                aria-label="Deposit amount in USDFC"
+              />
+              <button
+                onClick={() => runDeposit(depositAmount)}
+                disabled={loading || !depositAmount || Number(depositAmount) <= 0}
+                className="btn-success shrink-0"
+              >
+                Top up
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 md:col-span-2">
+              <label className="label mb-0 shrink-0">Withdraw</label>
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                className="input font-mono w-32"
+                placeholder="USDFC"
+                aria-label="Withdraw amount in USDFC"
+              />
+              <button
+                onClick={() => runWithdraw(withdrawAmount)}
+                disabled={loading || !withdrawAmount || Number(withdrawAmount) <= 0}
+                className="btn-warning shrink-0"
+              >
+                Withdraw
+              </button>
+              <button
+                onClick={() => runWithdraw('all')}
+                disabled={loading}
+                title="Withdraw everything above the critical threshold"
+                className="btn-secondary shrink-0"
+              >
+                To critical
+              </button>
             </div>
           </div>
 
           {error && (
-            <div className="mb-6 p-4 surface-danger rounded-xl text-danger-fg flex items-center gap-2 text-sm">
-              <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="mb-6 pill-danger px-4 py-2.5 text-sm flex items-center gap-2">
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               {error}
@@ -816,218 +784,202 @@ export default function Demo() {
           )}
 
           {/* Recent Transactions */}
-          <div className="mb-8 card p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-semibold text-ink-3 uppercase tracking-wider">Recent Transactions</h3>
-              <span className="text-xs text-ink-3 font-mono">{transactions.length} on this page</span>
+          <section className="mb-10">
+            <div className="flex items-baseline justify-between mb-3">
+              <h2 className="text-sm font-semibold text-ink uppercase tracking-wider">Recent transactions</h2>
+              <span className="text-xs text-ink-3 font-mono">{transactions.length}</span>
             </div>
             {transactions.length === 0 ? (
-              <p className="text-sm text-ink-3">No transactions yet. Try "Top up 10 USDFC" or "Withdraw 100".</p>
+              <p className="text-sm text-ink-3 py-6">No transactions yet. Try "Top up 10 USDFC" or "Withdraw 100".</p>
             ) : (
-              <div className="space-y-2 max-h-72 overflow-y-auto">
+              <div className="divide-y divide-line border-t border-line">
                 {transactions.map((t) => {
-                  const kindClass =
-                    t.kind === 'deposit' ? 'badge-healthy' :
-                    t.kind === 'withdraw' ? 'badge-warning' :
-                    t.kind === 'pause' ? 'badge-danger' :
-                    'badge-info'
+                  const kindPill =
+                    t.kind === 'deposit' ? 'pill-success' :
+                    t.kind === 'withdraw' ? 'pill-warning' :
+                    t.kind === 'pause' ? 'pill-danger' :
+                    'pill-neutral'
                   return (
-                    <div key={t.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-2.5 surface-info border-line rounded-lg">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className={`shrink-0 badge ${kindClass}`}>
-                          {t.kind}
-                        </span>
-                        <div className="min-w-0">
-                          <div className="text-sm text-ink truncate">{t.label}</div>
-                          {t.detail && <div className="text-xs text-ink-3 truncate">{t.detail}</div>}
-                        </div>
+                    <div key={t.id} className="py-3 flex items-center gap-3 flex-wrap">
+                      <span className={`shrink-0 ${kindPill}`}>{t.kind}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm text-ink truncate">{t.label}</div>
+                        {t.detail && <div className="text-xs text-ink-3 truncate">{t.detail}</div>}
                       </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        {t.txHash && (
-                          <ExplorerLink href={`https://calibration.filfox.info/en/tx/${t.txHash}`}>
-                            {shortenHash(t.txHash)}
-                          </ExplorerLink>
-                        )}
-                        <span className={`badge ${
-                          t.status === 'completed' ? 'badge-completed' :
-                          t.status === 'pending' ? 'badge-pending' :
-                          'badge-failed'
-                        }`}>
-                          {t.status === 'pending' && <span className="spinner w-2 h-2" />}
-                          {t.status}
-                        </span>
-                        <span className="text-xs text-ink-3 font-mono w-20 text-right">
-                          {new Date(t.timestamp).toLocaleTimeString()}
-                        </span>
-                      </div>
+                      {t.txHash && (
+                        <a
+                          href={`https://calibration.filfox.info/en/tx/${t.txHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-mono text-xs text-ink-3 hover:text-ink"
+                        >
+                          {shortenHash(t.txHash)}
+                        </a>
+                      )}
+                      <span className={`${
+                        t.status === 'completed' ? 'pill-completed' :
+                        t.status === 'pending' ? 'pill-pending' :
+                        'pill-failed'
+                      }`}>
+                        {t.status === 'pending' && <span className="spinner w-2 h-2" />}
+                        {t.status}
+                      </span>
+                      <span className="text-xs text-ink-3 font-mono w-16 text-right">
+                        {new Date(t.timestamp).toLocaleTimeString()}
+                      </span>
                     </div>
                   )
                 })}
               </div>
             )}
-          </div>
+          </section>
 
           {/* Top Status Bar */}
           {account && (
-            <div className={`mb-8 p-5 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-5 ${
-              isHealthy ? 'surface-healthy' : 'surface-danger'
-            }`}>
-              <div className="flex items-center gap-4">
-                <div className="relative flex h-3 w-3">
-                  {isHealthy && (
-                    <span className="pulse-dot text-emerald-600" />
-                  )}
-                  {!isHealthy && (
-                    <span className="pulse-dot text-red-600" />
-                  )}
-                </div>
+            <section className="mb-10">
+              <div className="flex items-center gap-3">
+                <span className={`pulse-dot ${isHealthy ? 'text-emerald-600' : 'text-red-600'}`} />
+                <h2 className={`text-2xl font-semibold tracking-tight ${
+                  isHealthy ? 'text-emerald-700' : 'text-red-700'
+                }`}>
+                  {isHealthy ? 'Healthy' : 'Critical'}
+                </h2>
+                <span className="text-sm text-ink-3">
+                  {noStorage
+                    ? '· no active storage on this account'
+                    : remainingEpochs > 0
+                      ? `· ${remainingEpochs.toLocaleString()} epochs remaining`
+                      : '· 0 epochs remaining'}
+                </span>
+              </div>
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-center">
                 <div>
-                  <div className={`text-2xl font-bold tracking-tight ${
-                    isHealthy ? 'text-success-fg' : 'text-danger-fg'
-                  }`}>
-                    {isHealthy ? 'HEALTHY' : 'CRITICAL'}
+                  <div className="flex justify-between text-xs text-ink-3 mb-1.5">
+                    <span>Runway remaining</span>
+                    <span className="font-mono">{progress.toFixed(0)}%</span>
                   </div>
-                  <div className="text-sm text-ink-2">
-                    {noStorage
-                      ? 'No active storage on this account'
-                      : remainingEpochs > 0
-                        ? `${remainingEpochs.toLocaleString()} epochs remaining`
-                        : '0 epochs remaining'}
+                  <div className="progress-track">
+                    <div
+                      className={`progress-fill ${isHealthy ? 'bg-emerald-500' : 'bg-red-500'}`}
+                      style={{ width: `${progress}%` }}
+                    />
                   </div>
                 </div>
-              </div>
-
-              <div className="flex-1 max-w-md w-full">
-                <div className="flex justify-between text-xs text-ink-3 mb-1.5">
-                  <span>Runway remaining</span>
-                  <span className="font-mono">{progress.toFixed(0)}%</span>
-                </div>
-                <div className="progress-track">
-                  <div
-                    className={`progress-fill ${isHealthy ? 'progress-healthy' : 'progress-danger'}`}
-                    style={{ width: `${progress}%` }}
-                  />
+                <div className="text-left md:text-right">
+                  <div className="text-xs text-ink-3">Triage threshold</div>
+                  <div className="text-lg font-mono font-semibold text-ink">{threshold.toLocaleString()} <span className="text-xs text-ink-3 font-normal">epochs</span></div>
                 </div>
               </div>
-
-              <div className="text-right">
-                <div className="text-xs text-ink-3">Triage Threshold</div>
-                <div className="text-lg font-mono font-semibold text-ink">{threshold.toLocaleString()} epochs</div>
-              </div>
-            </div>
+            </section>
           )}
 
           {/* Main Dashboard Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 mb-10">
             {/* Account State */}
-            <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="card p-6">
-                <h3 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-6">Account State</h3>
+            <div className="lg:col-span-2 space-y-10">
+              <section>
+                <h2 className="text-sm font-semibold text-ink uppercase tracking-wider mb-4">Account</h2>
                 {account ? (
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-ink-3 text-sm">USDFC Balance</span>
-                      <span className="text-xl font-mono font-semibold text-ink">{formatWei(account.balance)} <span className="text-xs text-ink-3 font-normal">USDFC</span></span>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6">
+                    <div>
+                      <div className="text-xs text-ink-3 mb-1">Balance</div>
+                      <div className="text-2xl font-semibold font-mono text-ink">{formatWei(account.balance)} <span className="text-xs text-ink-3 font-normal">USDFC</span></div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-ink-3 text-sm">Runway</span>
-                      <span className="text-xl font-mono font-semibold text-ink">
-                        {isUncapped ? <span className="text-ink-3">∞</span> : `${Number(account.runway).toLocaleString()} `}<span className="text-xs text-ink-3 font-normal">epochs</span>
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-ink-3 text-sm">Lockup Rate</span>
-                      <span className="text-xl font-mono font-semibold text-ink">{formatWei(account.lockupRate)} <span className="text-xs text-ink-3 font-normal">/epoch</span></span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-ink-3 text-sm">Current Epoch</span>
-                      <span className="text-xl font-mono font-semibold text-ink">{Number(account.currentEpoch).toLocaleString()}</span>
-                    </div>
-                    <div className="pt-4 border-t border-line">
-                      <div className="text-xs text-ink-3 mb-2">Chain Verification</div>
-                      <div className="rounded-lg surface-info p-3 font-mono text-xs text-ink-2 space-y-1">
-                        <div>Balance: {formatWei(account.balance)} USDFC | Epoch: {account.currentEpoch}</div>
-                        <div>Runway: {isUncapped ? '∞' : Number(account.runway).toLocaleString()} epochs | Lockup: {formatWei(account.lockupRate)}/epoch</div>
+                    <div>
+                      <div className="text-xs text-ink-3 mb-1">Runway</div>
+                      <div className="text-2xl font-semibold font-mono text-ink">
+                        {isUncapped ? <span className="text-ink-3">∞</span> : Number(account.runway).toLocaleString()} <span className="text-xs text-ink-3 font-normal">epochs</span>
                       </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-ink-3 mb-1">Lockup rate</div>
+                      <div className="text-2xl font-semibold font-mono text-ink">{formatWei(account.lockupRate)} <span className="text-xs text-ink-3 font-normal">/epoch</span></div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-ink-3 mb-1">Current epoch</div>
+                      <div className="text-2xl font-semibold font-mono text-ink">{Number(account.currentEpoch).toLocaleString()}</div>
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    <div className="skeleton h-4 w-full" />
-                    <div className="skeleton h-4 w-3/4" />
-                    <div className="skeleton h-4 w-2/3" />
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i}>
+                        <div className="skeleton h-3 w-16 mb-2" />
+                        <div className="skeleton h-7 w-24" />
+                      </div>
+                    ))}
                   </div>
                 )}
-              </div>
+              </section>
 
-              <div className="card p-6">
-                <h3 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-6">Portfolio</h3>
+              <section>
+                <h2 className="text-sm font-semibold text-ink uppercase tracking-wider mb-4">Portfolio</h2>
                 {account ? (
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-ink-3 text-sm">Total Cost / Epoch</span>
-                      <span className="text-xl font-mono font-semibold text-ink">{formatWei(account.lockupRate)} <span className="text-xs text-ink-3 font-normal">USDFC</span></span>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6">
+                    <div>
+                      <div className="text-xs text-ink-3 mb-1">Cost / epoch</div>
+                      <div className="text-2xl font-semibold font-mono text-ink">{formatWei(account.lockupRate)} <span className="text-xs text-ink-3 font-normal">USDFC</span></div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-ink-3 text-sm">Remaining Epochs</span>
-                      <span className="text-xl font-mono font-semibold text-ink">
-                        {isUncapped ? <span className="text-ink-3">∞</span> : remainingEpochs > 0 ? remainingEpochs.toLocaleString() : '0'}
-                      </span>
+                    <div>
+                      <div className="text-xs text-ink-3 mb-1">Remaining</div>
+                      <div className="text-2xl font-semibold font-mono text-ink">
+                        {isUncapped ? <span className="text-ink-3">∞</span> : remainingEpochs > 0 ? remainingEpochs.toLocaleString() : '0'} <span className="text-xs text-ink-3 font-normal">epochs</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-ink-3 text-sm">Threshold</span>
-                      <span className="text-xl font-mono font-semibold text-ink">{threshold.toLocaleString()}</span>
+                    <div>
+                      <div className="text-xs text-ink-3 mb-1">Threshold</div>
+                      <div className="text-2xl font-semibold font-mono text-ink">{threshold.toLocaleString()}</div>
                     </div>
-                    <div className="pt-4 border-t border-line">
-                      <div className="text-xs text-ink-3 mb-2">Status</div>
-                      <div className={`text-lg font-semibold ${isHealthy ? 'text-success-fg' : 'text-danger-fg'}`}>
-                        {isHealthy ? 'HEALTHY' : 'CRITICAL'}
+                    <div>
+                      <div className="text-xs text-ink-3 mb-1">Status</div>
+                      <div className={`text-2xl font-semibold ${isHealthy ? 'text-emerald-700' : 'text-red-700'}`}>
+                        {isHealthy ? 'Healthy' : 'Critical'}
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    <div className="skeleton h-4 w-full" />
-                    <div className="skeleton h-4 w-3/4" />
-                    <div className="skeleton h-4 w-2/3" />
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i}>
+                        <div className="skeleton h-3 w-16 mb-2" />
+                        <div className="skeleton h-7 w-24" />
+                      </div>
+                    ))}
                   </div>
                 )}
-              </div>
+              </section>
             </div>
 
             {/* Latest Decision */}
-            <div className="card p-6">
-              <h3 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-6">Latest Decision</h3>
+            <section>
+              <h2 className="text-sm font-semibold text-ink uppercase tracking-wider mb-4">Latest decision</h2>
               {latestDecision ? (
-                <div className="space-y-4">
-                  <div>
-                    <div className="text-xs text-ink-3 mb-1">Outcome</div>
-                    <div className={`text-2xl font-bold ${
-                      latestDecision.outcome === 'critical' ? 'text-danger-fg' :
-                      latestDecision.outcome === 'resume_insufficient' ? 'text-warning-fg' :
-                      'text-success-fg'
-                    }`}>
-                      {latestDecision.outcome.toUpperCase()}
-                    </div>
+                <div className="space-y-5">
+                  <div className={`text-3xl font-semibold tracking-tight ${
+                    latestDecision.outcome === 'critical' ? 'text-red-700' :
+                    latestDecision.outcome === 'resume_insufficient' ? 'text-amber-700' :
+                    'text-emerald-700'
+                  }`}>
+                    {latestDecision.outcome.replace(/_/g, ' ')}
                   </div>
 
                   {latestDecision.protectedDataset && (
-                    <div className="p-3 surface-healthy rounded-lg">
-                      <div className="text-xs text-success-fg mb-1 font-semibold">Protected</div>
+                    <div>
+                      <div className="text-xs text-ink-3">Protected</div>
                       <div className="text-sm font-medium text-ink">{latestDecision.protectedDataset}</div>
                     </div>
                   )}
 
                   {latestDecision.pausedDataset && (
-                    <div className="p-3 surface-danger rounded-lg">
-                      <div className="text-xs text-danger-fg mb-1 font-semibold">Paused / Dropped</div>
+                    <div>
+                      <div className="text-xs text-ink-3">Paused / dropped</div>
                       <div className="text-sm font-medium text-ink">{latestDecision.pausedDataset}</div>
                     </div>
                   )}
 
                   {latestDecision.resumeCandidate && (
-                    <div className="p-3 surface-info rounded-lg">
-                      <div className="text-xs text-info-fg mb-1 font-semibold">Resume Candidate</div>
+                    <div>
+                      <div className="text-xs text-ink-3">Resume candidate</div>
                       <div className="text-sm font-medium text-ink">{latestDecision.resumeCandidate}</div>
                     </div>
                   )}
@@ -1038,12 +990,9 @@ export default function Demo() {
                     )
                     if (alreadyPaused) {
                       return (
-                        <div className="p-3 surface-warning rounded-lg">
-                          <div className="text-xs text-warning-fg font-semibold">Intervention already executed</div>
-                          <p className="text-xs text-ink-3 mt-1">
-                            {latestDecision.pausedDataset} has been paused on-chain.
-                          </p>
-                        </div>
+                        <p className="text-xs text-amber-700">
+                          Intervention already executed · {latestDecision.pausedDataset} is paused on-chain.
+                        </p>
                       )
                     }
                     return (
@@ -1063,12 +1012,9 @@ export default function Demo() {
                     )
                     if (!isPaused) {
                       return (
-                        <div className="p-3 surface-healthy rounded-lg">
-                          <div className="text-xs text-success-fg font-semibold">Already active</div>
-                          <p className="text-xs text-ink-3 mt-1">
-                            {latestDecision.resumeCandidate} is already active.
-                          </p>
-                        </div>
+                        <p className="text-xs text-ink-3">
+                          {latestDecision.resumeCandidate} is already active.
+                        </p>
                       )
                     }
                     return (
@@ -1083,142 +1029,133 @@ export default function Demo() {
                   })()}
 
                   {latestDecision.outcome === 'resume_insufficient' && latestDecision.resumeCandidate && (
-                    <div className="p-3 surface-warning rounded-lg">
-                      <div className="text-xs text-warning-fg font-semibold">Resume not safe yet</div>
-                      <p className="text-xs text-ink-3 mt-1">
-                        Runway has recovered but resuming {latestDecision.resumeCandidate} would still put the account below threshold.
-                      </p>
-                    </div>
+                    <p className="text-xs text-amber-700">
+                      Resume not safe yet — runway has recovered but resuming {latestDecision.resumeCandidate} would still put the account below threshold.
+                    </p>
                   )}
 
                   <div>
-                    <div className="text-xs text-ink-3 mb-1">Reason</div>
-                    <div className="text-sm text-ink-2 leading-relaxed">{latestDecision.reason}</div>
+                    <div className="text-xs text-ink-3">Reason</div>
+                    <p className="text-sm text-ink-2 leading-relaxed mt-1">{latestDecision.reason}</p>
                   </div>
 
-                  <div className="pt-3 border-t border-line">
-                    <div className="text-xs text-ink-3">Checked At</div>
+                  <div>
+                    <div className="text-xs text-ink-3">Checked at</div>
                     <div className="text-sm text-ink-2 font-mono">
                       {new Date(latestDecision.timestamp).toLocaleString()}
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <div className="mx-auto w-10 h-10 rounded-full bg-slate-100 grid place-items-center mb-3">
-                    <svg className="w-5 h-5 text-ink-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                  </div>
+                <div className="py-6">
                   <p className="text-sm text-ink-2 font-medium">No checks yet</p>
-                  <p className="text-xs text-ink-3 mt-1">Click "Check Now" to begin triage.</p>
+                  <p className="text-xs text-ink-3 mt-1">Click "Check now" to begin triage.</p>
                 </div>
               )}
-            </div>
+            </section>
           </div>
 
           {/* Dataset Cards */}
-          {useWallet && datasets.length === 0 ? (
-            <div className="card p-10 mb-8 text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-brand-50 mb-4">
-                <svg className="w-6 h-6 text-brand-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-ink mb-2">No datasets on this account</h3>
-              <p className="text-sm text-ink-2 max-w-md mx-auto">
+          <section className="mb-10">
+            <h2 className="text-sm font-semibold text-ink uppercase tracking-wider mb-4">Datasets</h2>
+            {useWallet && datasets.length === 0 ? (
+              <p className="text-sm text-ink-3 py-6">
                 {noStorage
-                  ? 'Your wallet has no USDFC in Filecoin Pay and no active storage. Use "Top up 10 USDFC" to deposit, then upload a dataset to start monitoring.'
-                  : 'This account is funded but has no registered datasets. Upload a dataset via the Synapse SDK to begin triage monitoring.'}
+                  ? 'No USDFC in Filecoin Pay. Use "Top up 10 USDFC" to deposit, then upload a dataset to start monitoring.'
+                  : 'No registered datasets. Upload one via the Synapse SDK to begin triage monitoring.'}
               </p>
-            </div>
-          ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-            {datasets.map((ds) => (
-              <div key={ds.datasetId} className="card p-6 card-hover">
-                <div className="flex items-center justify-between mb-5">
-                  <h3 className="text-lg font-semibold text-ink">{ds.name}</h3>
-                  <span className={`badge ${ds.status === 'active' ? 'badge-healthy' : 'badge-warning'}`}>
-                    {ds.status}
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-ink-3 text-sm">Declared Value<RealBadge /></span>
-                    <span className="text-base font-mono font-semibold text-ink">{ds.declaredValue}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-ink-3 text-sm">Size</span>
-                    <span className="text-base font-mono text-ink">{ds.sizeBytes} bytes</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-ink-3 text-sm">Cost / Epoch<SimulatedBadge /></span>
-                    <span className="text-base font-mono text-ink">{formatWei(ds.costPerEpoch)} USDFC</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-ink-3 text-sm">Dataset ID<RealBadge /></span>
-                    <ExplorerLink href={`https://calibration.filfox.info/en/address/${account ? '0x6c79C23ef70df857a0544111a29A21b655709090' : ''}`}>
-                      #{ds.datasetId}
-                    </ExplorerLink>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-ink-3 text-sm">PieceCID</span>
-                    <ExplorerLink href={`https://cid.ipfs.io/#${ds.pieceCid}`}>
-                      {shortenHash(ds.pieceCid, 10, 4)}
-                    </ExplorerLink>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-ink-3 text-sm">Provider</span>
-                    <a href={ds.provider} target="_blank" rel="noopener noreferrer" className="text-xs font-mono text-ink-2 hover:text-ink transition truncate max-w-[200px]">
-                      {ds.provider.replace('https://', '')}
-                    </a>
-                  </div>
-
-                  {ds.status === 'paused' && (
-                    <div className="pt-4 border-t border-line mt-4">
-                      <button
-                        onClick={() => verifyPause(ds.datasetId)}
-                        disabled={verifyingId === ds.datasetId}
-                        className="btn-secondary w-full"
-                      >
-                        {verifyingId === ds.datasetId ? <><span className="spinner" /> Verifying…</> : 'Verify Pause'}
-                      </button>
-                      {verifyResult[ds.datasetId] && (
-                        <div className={`mt-3 text-sm p-3 rounded-lg ${
-                          verifyResult[ds.datasetId].accessible ? 'surface-warning text-warning-fg' : 'surface-healthy text-success-fg'
-                        }`}>
-                          {verifyResult[ds.datasetId].accessible
-                            ? 'Provider still serves cached piece, but payment rail is terminated — no new charges.'
-                            : verifyResult[ds.datasetId].message}
-                        </div>
-                      )}
+            ) : (
+              <div className="divide-y divide-line border-t border-line">
+                {datasets.map((ds) => (
+                  <div key={ds.datasetId} className="py-5">
+                    <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <h3 className="text-base font-medium text-ink truncate">{ds.name}</h3>
+                        <span className={`${ds.status === 'active' ? 'pill-success' : 'pill-warning'}`}>{ds.status}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs">
+                        <span className="text-ink-3">declared value</span>
+                        <span className="font-mono font-medium text-ink">{ds.declaredValue}</span>
+                        <RealBadge />
+                      </div>
                     </div>
-                  )}
-                </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-x-6 gap-y-3 text-sm">
+                      <div>
+                        <div className="text-xs text-ink-3">Size</div>
+                        <div className="font-mono text-ink">{ds.sizeBytes} <span className="text-ink-3 text-xs">bytes</span></div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-ink-3">Cost / epoch<SimulatedBadge /></div>
+                        <div className="font-mono text-ink">{formatWei(ds.costPerEpoch)} <span className="text-ink-3 text-xs">USDFC</span></div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-ink-3">Dataset ID<RealBadge /></div>
+                        <a
+                          href={`https://calibration.filfox.info/en/address/${account ? '0x6c79C23ef70df857a0544111a29A21b655709090' : ''}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-mono text-ink hover:text-ink underline-offset-2 hover:underline"
+                        >
+                          #{ds.datasetId}
+                        </a>
+                      </div>
+                      <div>
+                        <div className="text-xs text-ink-3">PieceCID</div>
+                        <a
+                          href={`https://cid.ipfs.io/#${ds.pieceCid}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-mono text-xs text-ink-2 hover:text-ink"
+                        >
+                          {shortenHash(ds.pieceCid, 10, 4)}
+                        </a>
+                      </div>
+                      <div>
+                        <div className="text-xs text-ink-3">Provider</div>
+                        <a href={ds.provider} target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-ink-2 hover:text-ink truncate block">
+                          {ds.provider.replace('https://', '')}
+                        </a>
+                      </div>
+                    </div>
+
+                    {ds.status === 'paused' && (
+                      <div className="mt-4">
+                        <button
+                          onClick={() => verifyPause(ds.datasetId)}
+                          disabled={verifyingId === ds.datasetId}
+                          className="btn-secondary !py-1 !px-3 !text-xs"
+                        >
+                          {verifyingId === ds.datasetId ? <><span className="spinner" /> Verifying…</> : 'Verify pause'}
+                        </button>
+                        {verifyResult[ds.datasetId] && (
+                          <p className={`mt-2 text-xs ${
+                            verifyResult[ds.datasetId].accessible ? 'text-amber-700' : 'text-emerald-700'
+                          }`}>
+                            {verifyResult[ds.datasetId].accessible
+                              ? 'Provider still serves cached piece, but payment rail is terminated — no new charges.'
+                              : verifyResult[ds.datasetId].message}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          )}
+            )}
+          </section>
 
           {/* Claude Explanation */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
-            <div className="card p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 rounded-lg gradient-brand flex items-center justify-center">
-                  <span className="text-white text-[10px] font-bold">AI</span>
-                </div>
-                <h3 className="text-xs font-semibold text-ink-3 uppercase tracking-wider">Claude Explanation</h3>
-              </div>
-              {latestDecision?.explanation ? (
-                <p className="text-ink leading-relaxed">{latestDecision.explanation}</p>
-              ) : useWallet ? (
-                <p className="text-ink-3">Click <span className="text-ink font-medium">Check Now</span> to see a wallet-derived runway analysis.</p>
-              ) : (
-                <p className="text-ink-3">Run a check to generate an explanation.</p>
-              )}
-            </div>
-          </div>
+          <section className="mb-10">
+            <h2 className="text-sm font-semibold text-ink uppercase tracking-wider mb-4">AI explanation</h2>
+            {latestDecision?.explanation ? (
+              <p className="text-ink-2 leading-relaxed max-w-3xl">{latestDecision.explanation}</p>
+            ) : useWallet ? (
+              <p className="text-ink-3 text-sm">Click <span className="text-ink font-medium">Check now</span> to see a wallet-derived runway analysis.</p>
+            ) : (
+              <p className="text-ink-3 text-sm">Run a check to generate an explanation.</p>
+            )}
+          </section>
         </div>
       </section>
     </div>
