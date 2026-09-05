@@ -336,10 +336,16 @@ export default function Demo() {
     try {
       let amountWei: bigint
       if (mode === 'all') {
-        const summary = await fetch(`${API_BASE}/api/account`).then((r) => r.json())
-        const targetBalance = 220_000_000_000_000_000_000n
-        const currentBalance = BigInt(summary.balance)
-        amountWei = currentBalance > targetBalance ? currentBalance - targetBalance : 0n
+        if (useWallet && account) {
+          const targetBalance = 220_000_000_000_000_000_000n
+          const currentBalance = BigInt(account.balance)
+          amountWei = currentBalance > targetBalance ? currentBalance - targetBalance : 0n
+        } else {
+          const summary = await fetch(`${API_BASE}/api/account`).then((r) => r.json())
+          const targetBalance = 220_000_000_000_000_000_000n
+          const currentBalance = BigInt(summary.balance)
+          amountWei = currentBalance > targetBalance ? currentBalance - targetBalance : 0n
+        }
       } else {
         amountWei = usdfcToWei(mode)
       }

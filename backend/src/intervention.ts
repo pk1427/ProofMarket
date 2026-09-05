@@ -91,10 +91,30 @@ export async function pauseDataset(datasetId: string, datasetName: string, addre
         ? { ...d, status: 'paused', endEpoch: terminatedEvent.args.endEpoch.toString() }
         : d
     )
-    saveDatasets(updated, address)
   } catch (err) {
     result.status = 'failed'
-    result.error = err instanceof Error ? err.message : String(err)
+    const msg = err instanceof Error ? err.message : String(err)
+    result.error = msg
+
+    if (/DataSetPaymentAlreadyTerminated/i.test(msg)) {
+      result.status = 'completed'
+      result.error = undefined
+      try {
+        const current = await getPdpDataSet(client, { dataSetId: BigInt(datasetId) })
+        if (current && (current as any).endEpoch) {
+          result.endEpoch = (current as any).endEpoch.toString()
+        }
+      } catch {
+        // best-effort
+      }
+      const datasets = loadDatasets(address)
+      const updated = datasets.map((d: any) =>
+        d.datasetId === datasetId
+          ? { ...d, status: 'paused', endEpoch: result.endEpoch || d.endEpoch }
+          : d
+      )
+      saveDatasets(updated, address)
+    }
   }
 
   appendIntervention(result, address)
@@ -175,7 +195,13 @@ export async function resumeDataset(datasetId: string, datasetName: string, addr
     saveDatasets(updated, address)
   } catch (err) {
     result.status = 'failed'
-    result.error = err instanceof Error ? err.message : String(err)
+    const msg = err instanceof Error ? err.message : String(err)
+    result.error = msg
+
+    if (/already\s+active|DataSetNotFound|DataSetPaymentAlreadyTerminated/i.test(msg)) {
+      result.status = 'completed'
+      result.error = undefined
+    }
   }
 
   appendIntervention(result, address)
